@@ -1,0 +1,10 @@
+pyktok
+playwright
+opencv-python
+easyocr
+numpy
+pillow
+requests
+python-dotenv
+google-cloud-vision
+openai-whisper
