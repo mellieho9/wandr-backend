@@ -32,11 +32,22 @@ class TikTokDownloader:
             # Create output directory if it doesn't exist
             Path(output_dir).mkdir(parents=True, exist_ok=True)
             
-            # Download video and metadata
-            if metadata_file:
-                pyk.save_tiktok(url, True, metadata_file)
-            else:
-                pyk.save_tiktok(url, True)
+            # Save current directory and change to output directory
+            # since pyktok downloads to current working directory
+            original_cwd = os.getcwd()
+            os.chdir(output_dir)
+            
+            try:
+                # Download video and metadata
+                if metadata_file:
+                    # For metadata file, use relative path from output_dir
+                    metadata_filename = os.path.basename(metadata_file)
+                    pyk.save_tiktok(url, True, metadata_filename)
+                else:
+                    pyk.save_tiktok(url, True)
+            finally:
+                # Always return to original directory
+                os.chdir(original_cwd)
             
             print(f"✅ Successfully downloaded: {url}")
             

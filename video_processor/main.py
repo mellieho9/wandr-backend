@@ -4,15 +4,13 @@ TikTok Video Processing Pipeline
 """
 
 import os
-import json
-import argparse
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 
-from video_downloader import TikTokDownloader
-from audio_transcriptor import AudioTranscriptor
-from video_frame_ocr import VideoFrameOCR
+from .video_downloader import TikTokDownloader
+from .audio_transcriptor import AudioTranscriptor
+from .video_frame_ocr import VideoFrameOCR
 
 load_dotenv()
 
@@ -28,7 +26,7 @@ class TikTokProcessor:
         # Extract video ID and check if files already exist
         video_id = self._extract_video_id(url)
         video_patterns = [f"t_{video_id}_.mp4", f"{video_id}_.mp4", f"t_{video_id}.mp4"]
-        metadata_file = f"{category}_metadata.csv"
+        metadata_file = f"results/{video_id}_metadata.csv"
         
         # Check if video already exists
         existing_video = None
@@ -45,20 +43,26 @@ class TikTokProcessor:
         
         # Download if not exists
         print(f"📥 Downloading: {url}")
-        download_result = self.downloader.download_video(url, output_dir, metadata_file)
+        download_result = self.downloader.download_video(url, "results", metadata_file)
         if not download_result['success']:
             return {'success': False, 'error': f"Download failed: {download_result['error']}"}
         
-        # Find downloaded video
+        # Find downloaded video (check both root and results folder)
         video_path = None
         for pattern in video_patterns:
+            # Check root folder first (where pyktok downloads)
             if os.path.exists(pattern):
                 video_path = pattern
                 break
+            # Check results folder
+            results_pattern = f"results/{pattern}"
+            if os.path.exists(results_pattern):
+                video_path = results_pattern
+                break
         
         if not video_path:
-            # Fallback: find any recent .mp4 file
-            mp4_files = list(Path(".").glob("*.mp4"))
+            # Fallback: find any recent .mp4 file in both locations
+            mp4_files = list(Path(".").glob("*.mp4")) + list(Path("results").glob("*.mp4"))
             if mp4_files:
                 video_path = str(max(mp4_files, key=os.path.getctime))
         
@@ -138,40 +142,3 @@ class TikTokProcessor:
             return url.split('/video/')[-1].split('/')[0].split('?')[0]
         return "unknown"
 
-def main():
-    parser = argparse.ArgumentParser(description="TikTok Video Processor")
-    parser.add_argument("--url", help="TikTok URL to download and process")
-    parser.add_argument("--video", help="Local video file to process")
-    parser.add_argument("--output", help="Output JSON file")
-    parser.add_argument("--category", default="tiktok", help="Category for metadata file")
-    parser.add_argument("--model", default="tiny", choices=["tiny", "base", "small"], help="Whisper model")
-    parser.add_argument("--no-ocr", action="store_true", help="Skip OCR")
-    
-    args = parser.parse_args()
-    
-    if not args.url and not args.video:
-        parser.error("Provide --url or --video")
-    
-    # Get API key
-    vision_api_key = None if args.no_ocr else os.getenv("VISION_API_KEY")
-    if not vision_api_key and not args.no_ocr:
-        print("⚠️ No VISION_API_KEY - OCR disabled")
-    
-    # Process
-    processor = TikTokProcessor(vision_api_key, args.model)
-    
-    if args.url:
-        results = processor.process_url(args.url, category=args.category)
-    else:
-        results = processor.process_video(args.video)
-    
-    # Save results
-    if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        print(f"\n💾 Saved to: {args.output}")
-    
-    return 0 if results['success'] else 1
-
-if __name__ == "__main__":
-    exit(main())
