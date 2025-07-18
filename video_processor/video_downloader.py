@@ -1,22 +1,118 @@
-import pyktok as pyk
-import pandas as pd
+"""TikTok video downloader with carousel support."""
 import os
+import time
 from pathlib import Path
 
+import pyktok as pyk
+import requests
+
+from utils import ProcessingLogger, TikTokURLParser
+
 class TikTokDownloader:
-    """
-    TikTok video downloader using pyktok
-    """
+    """TikTok video downloader using pyktok"""
     
     def __init__(self, browser='chrome'):
         """Initialize the downloader with specified browser"""
         self.browser = browser
         pyk.specify_browser(browser)
-        print(f"✅ TikTok downloader initialized with {browser}")
-    
-    def download_video(self, url, output_dir=".", metadata_file=None):
+        ProcessingLogger.log_initialization(f"TikTok downloader with {browser}")
+
+    def _get_content_type(self, url):
+        """Detect content type from TikTok URL"""
+        if '/photo/' in url:
+            return 'carousel'
+        return 'video'
+
+    def _download_carousel_images(self, url, output_dir):
+        """Download carousel images using the fixed method"""
+        try:
+            ProcessingLogger.log_download_start(url)
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+            # Convert photo URL to video URL for API access
+            video_url = url.replace('/photo/', '/video/')
+            
+            # Get TikTok JSON data
+            tt_json = pyk.alt_get_tiktok_json(video_url=video_url)
+            data_slot = tt_json["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]
+            
+            # Extract image URLs
+            image_urls = [img["imageURL"]["urlList"][0] for img in data_slot["imagePost"]["images"]]
+            
+            # Extract username and photo ID for consistent naming
+            username = None
+            photo_id = None
+            parts = url.split('/')
+            for i, part in enumerate(parts):
+                if part.startswith('@'):
+                    username = part  # Keep the @ symbol
+                elif part == "photo" and i + 1 < len(parts):
+                    photo_id = parts[i + 1].split('?')[0]
+            
+            # Download images with descriptive filenames
+            image_files = []
+            for idx, img_url in enumerate(image_urls):
+                img_data = requests.get(img_url, timeout=30).content
+                img_filename = f"{username}_photo_{photo_id}_{idx:02d}.jpg"
+                img_path = Path(output_dir) / img_filename
+                
+                with open(img_path, "wb") as f:
+                    f.write(img_data)
+                
+                image_files.append(str(img_path))
+                ProcessingLogger.log_success(f"Downloaded image {idx + 1}/{len(image_urls)}")
+
+            return {
+                'success': True,
+                'content_type': 'carousel',
+                'image_files': image_files,
+                'image_count': len(image_files)
+            }
+
+        except Exception as e:
+            ProcessingLogger.log_error(f"Error downloading carousel: {e}")
+            return {
+                'success': False,
+                'content_type': 'carousel',
+                'error': str(e)
+            }
+
+    def download_content(self, url, output_dir=".", metadata_file=None):
         """
-        Download TikTok video and metadata
+        Download TikTok content (video or carousel)
+        
+        Args:
+            url: TikTok URL to download
+            output_dir: Directory to save the content
+            metadata_file: Optional CSV file to save metadata
+            
+        Returns:
+            Dictionary with download results
+        """
+        try:
+            content_type = self._get_content_type(url)
+            ProcessingLogger.log_download_start(url)
+            
+            # Create output directory if it doesn't exist
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            
+            if content_type == 'carousel':
+                return self._download_carousel_images(url, output_dir)
+            else:
+                return self._download_video_content(url, output_dir, metadata_file)
+            
+        except Exception as e:
+            error_msg = f"Error downloading {url}: {e}"
+            ProcessingLogger.log_error(error_msg)
+            return {
+                'url': url,
+                'success': False,
+                'error': str(e)
+            }
+    
+    def _download_video_content(self, url, output_dir, metadata_file):
+        """
+        Download video content using pyktok
         
         Args:
             url: TikTok URL to download
@@ -26,82 +122,59 @@ class TikTokDownloader:
         Returns:
             Dictionary with download results
         """
+        # Save current directory and change to output directory
+        # since pyktok downloads to current working directory
+        original_cwd = os.getcwd()
+        os.chdir(output_dir)
+        
         try:
-            print(f"📥 Downloading TikTok video: {url}")
+            # Download video and metadata
+            if metadata_file:
+                # For metadata file, use relative path from output_dir
+                metadata_filename = os.path.basename(metadata_file)
+                pyk.save_tiktok(url, True, metadata_filename)
+            else:
+                pyk.save_tiktok(url, True)
+                
+            # Find downloaded video files (only files created in the last 10 seconds)
+            current_time = time.time()
+            video_files = []
             
-            # Create output directory if it doesn't exist
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            for ext in ['*.mp4', '*.mov', '*.avi', '*.webm']:
+                for file_path in Path('.').glob(ext):
+                    # Check if file was created very recently (within last 10 seconds)
+                    if current_time - os.path.getctime(file_path) < 10:
+                        video_files.append(file_path)
             
-            # Save current directory and change to output directory
-            # since pyktok downloads to current working directory
-            original_cwd = os.getcwd()
-            os.chdir(output_dir)
+            # Convert to absolute paths and sort by creation time (newest first)
+            video_paths = []
+            for video_file in video_files:
+                # Construct path relative to original working directory
+                abs_path = str(Path(original_cwd) / output_dir / video_file)
+                
+                if os.path.exists(str(video_file)):
+                    # File exists in current directory (which is output_dir)
+                    video_paths.append(abs_path)
+                elif os.path.exists(abs_path):
+                    video_paths.append(abs_path)
             
-            try:
-                # Download video and metadata
-                if metadata_file:
-                    # For metadata file, use relative path from output_dir
-                    metadata_filename = os.path.basename(metadata_file)
-                    pyk.save_tiktok(url, True, metadata_filename)
-                else:
-                    pyk.save_tiktok(url, True)
-            finally:
-                # Always return to original directory
-                os.chdir(original_cwd)
+            video_paths.sort(key=lambda f: os.path.getctime(f) if os.path.exists(f) else 0, reverse=True)
             
-            print(f"✅ Successfully downloaded: {url}")
-            
-            return {
-                'url': url,
-                'success': True,
-                'output_dir': output_dir,
-                'metadata_file': metadata_file
-            }
-            
-        except Exception as e:
-            error_msg = f"Error downloading {url}: {e}"
-            print(f"❌ {error_msg}")
-            return {
-                'url': url,
-                'success': False,
-                'error': str(e)
-            }
+        finally:
+            # Always return to original directory
+            os.chdir(original_cwd)
+        
+        ProcessingLogger.log_success(f"Successfully downloaded video: {url}")
+        
+        return {
+            'url': url,
+            'success': True,
+            'content_type': 'video',
+            'output_dir': output_dir,
+            'metadata_file': metadata_file,
+            'video_files': video_paths
+        }
     
-    def download_multiple(self, urls, output_dir=".", category="tiktok"):
-        """
-        Download multiple TikTok videos
-        
-        Args:
-            urls: List of TikTok URLs
-            output_dir: Directory to save videos
-            category: Category name for metadata file
-            
-        Returns:
-            List of download results
-        """
-        results = []
-        metadata_file = f"{category}_metadata.csv"
-        
-        print(f"📦 Downloading {len(urls)} TikTok videos...")
-        
-        for i, url in enumerate(urls, 1):
-            print(f"\n🎬 Processing video {i}/{len(urls)}")
-            result = self.download_video(url, output_dir, metadata_file)
-            results.append(result)
-        
-        # Summary
-        successful = len([r for r in results if r['success']])
-        print(f"\n📊 Download Summary: {successful}/{len(urls)} successful")
-        
-        return results
-
-# Example usage and testing
-if __name__ == "__main__":
-    downloader = TikTokDownloader()
-    
-    # Example URL
-    test_url = "https://www.tiktok.com/t/ZP8rwYBo3/"
-    
-    # Download single video
-    result = downloader.download_video(test_url, "downloads", "test_metadata.csv")
-    print(f"Download result: {result}")
+    def download_video(self, url, output_dir=".", metadata_file=None):
+        """Legacy method for backward compatibility"""
+        return self.download_content(url, output_dir, metadata_file)
