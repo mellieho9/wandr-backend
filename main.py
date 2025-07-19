@@ -146,13 +146,22 @@ def create_notion_entries(location_file: str, database_id: str, source_url: str 
 def main():
     """Command line interface"""
     parser = argparse.ArgumentParser(
-        description="Complete TikTok video processing and location extraction pipeline"
+        description="Complete TikTok video processing and location extraction pipeline. "
+                   "Process individual URLs or batch process today's URLs from a Notion database."
     )
     
     # Input options
-    parser.add_argument("--url", required=True, help="TikTok URL to process")
+    parser.add_argument("--url", help="TikTok URL to process")
     parser.add_argument("--category", nargs="*", help="Place categories (e.g., restaurant chinese)")
     parser.add_argument("--output-dir", default="results", help="Output directory")
+    
+    # Batch processing options
+    parser.add_argument("--process-todays-urls", action="store_true", 
+                       help="Process all URLs from today in source database and create place entries")
+    parser.add_argument("--source-database-id", 
+                       help="Source database ID to pull URLs from (can also use NOTION_SOURCE_DB_ID env var)")
+    parser.add_argument("--places-database-id", 
+                       help="Places database ID to create entries in (can also use NOTION_PLACES_DB_ID env var)")
     
     # Processing options
     parser.add_argument("--video-only", action="store_true", help="Only process video, skip location extraction")
@@ -168,16 +177,63 @@ def main():
     if args.video_only and args.location_only:
         parser.error("Cannot use both --video-only and --location-only")
     
-    # Handle Notion database ID
+    if args.process_todays_urls and args.url:
+        parser.error("Cannot use both --process-todays-urls and --url")
+    
+    if not args.process_todays_urls and not args.url:
+        parser.error("Either --url or --process-todays-urls is required")
+    
+    # Handle Notion database IDs
     database_id = args.database_id or os.getenv("NOTION_PLACES_DB_ID")
+    places_database_id = args.places_database_id or os.getenv("NOTION_PLACES_DB_ID")
+    source_database_id = args.source_database_id or os.getenv("NOTION_SOURCE_DB_ID")
+    
     if args.create_notion_entry and not database_id:
         parser.error("--create-notion-entry requires --database-id or NOTION_PLACES_DB_ID env var")
+    
+    if args.process_todays_urls and not source_database_id:
+        parser.error("--process-todays-urls requires --source-database-id or NOTION_SOURCE_DB_ID env var")
+    
+    if args.process_todays_urls and not places_database_id:
+        parser.error("--process-todays-urls requires --places-database-id or NOTION_PLACES_DB_ID env var")
     
     # Ensure output directory exists
     os.makedirs(args.output_dir, exist_ok=True)
     
     try:
-        if args.location_only:
+        if args.process_todays_urls:
+            # Process all URLs from today in source database
+            logger.info("Processing today's URLs from source database...")
+            
+            # Initialize Notion client
+            api_key = os.getenv("NOTION_API_KEY") or os.getenv("NOTION_TOKEN")
+            if not api_key:
+                logger.error("NOTION_API_KEY or NOTION_TOKEN environment variable is required")
+                return 1
+            
+            notion_client = NotionClient(api_key)
+            
+            # Process today's URLs
+            results = notion_client.process_todays_urls(
+                source_database_id=source_database_id,
+                places_database_id=places_database_id
+            )
+            
+            # Print summary
+            logger.info("Processing Summary:")
+            logger.info(f"  Total URLs processed: {results['processed']}")
+            logger.info(f"  Successful: {results['successful']}")
+            logger.info(f"  Failed: {results['failed']}")
+            
+            if results['errors']:
+                logger.error("Errors encountered:")
+                for error in results['errors']:
+                    logger.error(f"  - {error}")
+            
+            # Return non-zero exit code if any processing failed
+            return 0 if results['failed'] == 0 else 1
+            
+        elif args.location_only:
             # Only run location extraction
             logger.info("Running location extraction only...")
             location_processor = LocationProcessor()

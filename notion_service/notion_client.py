@@ -7,6 +7,7 @@ including creating new entries and updating existing pages.
 
 import os
 import logging
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from notion_client import Client
 from notion_client.errors import APIResponseError
@@ -301,3 +302,126 @@ class NotionClient:
         except APIResponseError as e:
             logger.error(f"Connection test failed: {e}")
             return False
+    
+    def get_todays_urls(self, database_id: str, url_property: str = "URL", date_property: str = "Created") -> List[str]:
+        """
+        Query database for URLs posted today.
+        
+        Args:
+            database_id: The ID of the database to query
+            url_property: Name of the URL property in the database
+            date_property: Name of the date property to filter by (default: "Created")
+            
+        Returns:
+            List of URLs from today's entries
+        """
+        try:
+            # Get today's date in ISO format
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            
+            # Create filter for today's entries
+            filter_conditions = {
+                "property": date_property,
+                "date": {
+                    "on_or_after": today
+                }
+            }
+            
+            # Query the database
+            response = self.query_database(
+                database_id=database_id,
+                filter_conditions=filter_conditions
+            )
+            
+            urls = []
+            for page in response.get('results', []):
+                properties = page.get('properties', {})
+                
+                # Extract URL from the specified property
+                url_prop = properties.get(url_property)
+                if url_prop and url_prop.get('type') == 'url' and url_prop.get('url'):
+                    urls.append(url_prop['url'])
+            
+            logger.info(f"Found {len(urls)} URLs from today in database {database_id}")
+            return urls
+            
+        except Exception as e:
+            logger.error(f"Failed to get today's URLs: {e}")
+            return []
+    
+    def process_todays_urls(self, source_database_id: str, places_database_id: str, 
+                           url_property: str = "URL", date_property: str = "Created") -> Dict[str, Any]:
+        """
+        Process all URLs from today and create place entries.
+        
+        Args:
+            source_database_id: Database ID to pull URLs from
+            places_database_id: Database ID to create place entries in
+            url_property: Name of the URL property in source database
+            date_property: Name of the date property to filter by
+            
+        Returns:
+            Summary of processing results
+        """
+        # Import here to avoid circular imports
+        import sys
+        from pathlib import Path
+        
+        # Add parent directory to path
+        parent_dir = Path(__file__).parent.parent
+        sys.path.insert(0, str(parent_dir))
+        
+        from main import process_tiktok_url
+        
+        # Get today's URLs
+        urls = self.get_todays_urls(source_database_id, url_property, date_property)
+        
+        if not urls:
+            return {
+                "processed": 0,
+                "successful": 0,
+                "failed": 0,
+                "urls": []
+            }
+        
+        results = {
+            "processed": len(urls),
+            "successful": 0,
+            "failed": 0,
+            "urls": [],
+            "errors": []
+        }
+        
+        logger.info(f"Processing {len(urls)} URLs from today...")
+        
+        for i, url in enumerate(urls, 1):
+            try:
+                logger.info(f"Processing URL {i}/{len(urls)}: {url}")
+                
+                # Process the TikTok URL with Notion integration
+                success = process_tiktok_url(
+                    url=url,
+                    place_category=None,  # Let AI determine categories
+                    output_dir="results",
+                    create_notion_entry=True,
+                    database_id=places_database_id
+                )
+                
+                if success:
+                    results["successful"] += 1
+                    results["urls"].append({"url": url, "status": "success"})
+                    logger.info(f"✅ Successfully processed: {url}")
+                else:
+                    results["failed"] += 1
+                    results["urls"].append({"url": url, "status": "failed"})
+                    results["errors"].append(f"Processing failed for: {url}")
+                    logger.error(f"❌ Failed to process: {url}")
+                    
+            except Exception as e:
+                results["failed"] += 1
+                results["urls"].append({"url": url, "status": "error"})
+                results["errors"].append(f"Error processing {url}: {str(e)}")
+                logger.error(f"❌ Error processing {url}: {e}")
+        
+        logger.info(f"Processing complete: {results['successful']} successful, {results['failed']} failed")
+        return results
