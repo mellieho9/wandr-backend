@@ -119,7 +119,6 @@ def create_notion_entries(location_file: str, database_id: str, source_url: str 
     for i, place in enumerate(places, 1):
         try:
             # Format location data for this place
-            logger.info(len(place.get("recommendations")))
             place_data = {
                 "name of place": place.get("name"),
                 "location": place.get("address"),
@@ -129,6 +128,7 @@ def create_notion_entries(location_file: str, database_id: str, source_url: str 
                 "time": place.get("hours"),
                 "website": place.get("website"),
                 "visited": place.get("visited", False),
+                "maps_link": place.get("maps_link"),
                 "URL": source_url or location_data.get("url")
             }
             

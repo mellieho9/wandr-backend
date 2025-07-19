@@ -78,13 +78,35 @@ class GooglePlacesService:
         
         return None
     
+    def generate_maps_link(self, place_id: str = None, place_name: str = None, address: str = None) -> str:
+        """Generate a Google Maps link for the location"""
+        
+        if place_id:
+            # Most accurate: use place_id
+            return f"https://maps.google.com/maps/place/?q=place_id:{place_id}"
+        elif address:
+            # Use formatted address
+            import urllib.parse
+            encoded_address = urllib.parse.quote_plus(address)
+            return f"https://maps.google.com/maps/search/{encoded_address}"
+        elif place_name:
+            # Fallback: use place name
+            import urllib.parse
+            encoded_name = urllib.parse.quote_plus(place_name)
+            return f"https://maps.google.com/maps/search/{encoded_name}"
+        
+        return ""
+
     def enhance_location_info(self, place_name: str, location_hint: str = None) -> Dict:
-        """Search and enhance location information"""
+        """Search and enhance location information with Google Maps link"""
         
         result = {
             'formatted_address': '',
             'hours': '',
-            'website': ''
+            'website': '',
+            'maps_link': '',
+            'place_id': '',
+            'has_valid_location': False
         }
         
         if not self.client:
@@ -94,15 +116,22 @@ class GooglePlacesService:
             # Search for the place
             place_info = self.search_place(place_name, location_hint)
             if not place_info:
+                logger.info(f"No Google Places result found for: {place_name}")
                 return result
             
+            # Store place_id for maps link
+            place_id = place_info.get('place_id', '')
+            result['place_id'] = place_id
+            
             # Get detailed information
-            details = self.get_place_details(place_info['place_id'])
+            details = self.get_place_details(place_id)
             if not details:
+                logger.info(f"No place details found for: {place_name}")
                 return result
             
             # Extract relevant information
-            result['formatted_address'] = details.get('formatted_address', '')
+            formatted_address = details.get('formatted_address', '')
+            result['formatted_address'] = formatted_address
             result['website'] = details.get('website', '')
             
             # Format opening hours
@@ -110,7 +139,17 @@ class GooglePlacesService:
                 hours = details['opening_hours']['weekday_text']
                 result['hours'] = '\n'.join(hours)
             
-            logger.info(f"Google Places enhancement completed for: {place_name}")
+            # Generate Google Maps link
+            if place_id:
+                result['maps_link'] = self.generate_maps_link(place_id=place_id)
+                result['has_valid_location'] = True
+                logger.info(f"Google Places enhancement completed for: {place_name}")
+            elif formatted_address:
+                result['maps_link'] = self.generate_maps_link(address=formatted_address)
+                result['has_valid_location'] = True
+                logger.info(f"Google Places enhancement with address for: {place_name}")
+            else:
+                logger.warning(f"No valid location found for: {place_name}")
             
         except Exception as e:
             logger.warning(f"Google Places enhancement failed: {e}")

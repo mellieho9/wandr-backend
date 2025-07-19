@@ -197,16 +197,22 @@ class NotionClient:
                 "url": location_data["URL"]
             }
         
-        # Address
+        # Address (with optional Google Maps link)
         if location_data.get("location"):
+            address_content = {
+                "text": {
+                    "content": location_data["location"]
+                }
+            }
+            
+            # Add hyperlink if maps_link is available
+            if location_data.get("maps_link"):
+                address_content["text"]["link"] = {
+                    "url": location_data["maps_link"]
+                }
+            
             properties["Address"] = {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": location_data["location"]
-                        }
-                    }
-                ]
+                "rich_text": [address_content]
             }
         
         # Categories (multi-select)

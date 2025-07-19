@@ -18,6 +18,7 @@ class PlaceInfo:
     website: Optional[str] = None
     visited: bool = False
     is_popup: bool = False
+    maps_link: Optional[str] = None
     
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON export"""
@@ -30,7 +31,8 @@ class PlaceInfo:
             'hours': self.hours,
             'website': self.website,
             'visited': self.visited,
-            'is_popup': self.is_popup
+            'is_popup': self.is_popup,
+            'maps_link': self.maps_link
         }
 
 
@@ -62,7 +64,8 @@ class LocationInfo:
                 hours=place_data.get('hours'),
                 website=place_data.get('website'),
                 visited=place_data.get('visited', False),
-                is_popup=place_data.get('is_popup', False)
+                is_popup=place_data.get('is_popup', False),
+                maps_link=place_data.get('maps_link')
             )
             for place_data in data.get('places', [])
         ]

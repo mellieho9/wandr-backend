@@ -60,37 +60,49 @@ class LocationProcessor:
         
         content_type = analysis_result.get('content_analysis', {}).get('content_type', 'single_place')
         
-        # Process all places
+        # Process all places and filter based on Google Maps validation
         places_list = []
         
         if analysis_result.get('places'):
             for place_data in analysis_result['places']:
+                place_name = place_data.get('name', '').strip()
+                
+                if not place_name:
+                    continue
+                
                 place_info = PlaceInfo(
-                    name=place_data.get('name', ''),
+                    name=place_name,
                     address=place_data.get('address'),
                     neighborhood=place_data.get('neighborhood'),
                     categories=place_data.get('categories', []),
                     recommendations=place_data.get('recommendations'),
                     hours=place_data.get('hours'),
                     website=place_data.get('website'),
-                    visited=False,  # Default to not visited
+                    visited=False,
                     is_popup=place_data.get('is_popup', False)
                 )
                 
-                # Enhance with Google Places data for all places
-                if place_info.name:
-                    location_hint = place_info.address or place_info.neighborhood or ''
-                    places_data = self.places_service.enhance_location_info(place_info.name, location_hint)
-                    
-                    # Update place info with Google Places data
-                    if places_data.get('formatted_address'):
-                        place_info.address = places_data['formatted_address']
-                    if places_data.get('website'):
-                        place_info.website = places_data['website']
-                    if places_data.get('hours') and not place_info.hours:
-                        place_info.hours = places_data['hours']
+                # Enhance with Google Places data and get Maps link
+                location_hint = place_info.address or place_info.neighborhood or ''
+                places_data = self.places_service.enhance_location_info(place_name, location_hint)
                 
-                places_list.append(place_info)
+                # Skip places without valid Google Maps location
+                if not places_data.get('has_valid_location'):
+                    continue
+                
+                # Update place info with Google Places data
+                if places_data.get('formatted_address'):
+                    place_info.address = places_data['formatted_address']
+                if places_data.get('website'):
+                    place_info.website = places_data['website']
+                if places_data.get('hours') and not place_info.hours:
+                    place_info.hours = places_data['hours']
+                
+                # Add the Google Maps link
+                place_info.maps_link = places_data.get('maps_link', '')
+                
+                if place_info.maps_link:
+                    places_list.append(place_info)
         
         return LocationInfo(
             url=url,
