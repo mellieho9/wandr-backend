@@ -5,13 +5,15 @@ Notion API Client
 Handles direct interaction with Notion API for updating pages.
 """
 
-import os
 import json
+import logging
+import os
 from typing import Dict, Optional, List
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class NotionClient:
     """Client for interacting with Notion API"""
@@ -27,9 +29,9 @@ class NotionClient:
         }
         
         if not self.api_key:
-            print("⚠️ No NOTION_API_KEY found - Notion integration disabled")
+            logger.warning("No NOTION_API_KEY found - Notion integration disabled")
         else:
-            print("✅ Notion API client initialized")
+            logger.info("Notion API client initialized")
     
     def get_page(self, page_id: str) -> Optional[Dict]:
         """Get page properties from Notion"""

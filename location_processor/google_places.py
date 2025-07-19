@@ -5,12 +5,14 @@ Google Places Service
 Handles Google Maps Places API integration for location lookup and enhancement.
 """
 
+import logging
 import os
 from typing import Dict, Optional
 import googlemaps
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class GooglePlacesService:
     """Google Places API integration for location enhancement"""
@@ -21,10 +23,10 @@ class GooglePlacesService:
         
         if self.api_key:
             self.client = googlemaps.Client(key=self.api_key)
-            print("✅ Google Maps API initialized")
+            logger.info("Google Maps API initialized")
         else:
             self.client = None
-            print("⚠️ No Google Maps API key - address lookup disabled")
+            logger.warning("No Google Maps API key - address lookup disabled")
     
     def search_place(self, place_name: str, location_hint: str = None) -> Optional[Dict]:
         """Search for a place and return basic information"""

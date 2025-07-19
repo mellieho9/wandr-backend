@@ -7,11 +7,14 @@ Main service for handling Notion integration and webhooks.
 
 import argparse
 import json
+import logging
 import os
 from pathlib import Path
 
 from .notion_client import NotionClient
 from .webhook_handler import WebhookHandler
+
+logger = logging.getLogger(__name__)
 
 class NotionService:
     """Main service combining Notion client and webhook handling"""
@@ -20,7 +23,7 @@ class NotionService:
         """Initialize service with API key"""
         self.client = NotionClient(notion_api_key)
         self.webhook_handler = WebhookHandler(self.client)
-        print("✅ Notion service initialized")
+        logger.info("Notion service initialized")
     
     def update_page_from_location_file(self, page_id: str, location_file: str) -> bool:
         """Update Notion page from existing location JSON file"""

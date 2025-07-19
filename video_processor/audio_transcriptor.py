@@ -1,7 +1,10 @@
+import logging
 import os
 import whisper
 import torch
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 class AudioTranscriptor:
     """
@@ -22,17 +25,17 @@ class AudioTranscriptor:
                 - "turbo": Optimized for speed (~809 MB)
         """
         self.model_size = model_size
-        print(f"🔄 Loading Whisper model: {model_size}")
+        logger.info(f"Loading Whisper model: {model_size}")
         
         # Check if CUDA is available for GPU acceleration
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"🖥️  Using device: {device}")
+        logger.info(f"Using device: {device}")
         
         try:
             self.model = whisper.load_model(model_size, device=device)
-            print(f"✅ Whisper model '{model_size}' loaded successfully")
+            logger.info(f"Whisper model '{model_size}' loaded successfully")
         except Exception as e:
-            print(f"❌ Failed to load model: {e}")
+            logger.error(f"Failed to load model: {e}")
             raise
 
     def transcribe_audio(self, audio_path, language=None, temperature=0):
@@ -53,10 +56,10 @@ class AudioTranscriptor:
         try:
             # Get file info
             file_size = os.path.getsize(audio_path) / (1024 * 1024)  # MB
-            print(f"📁 File: {Path(audio_path).name} ({file_size:.1f}MB)")
+            logger.info(f"File: {Path(audio_path).name} ({file_size:.1f}MB)")
             
             # Transcribe using Whisper
-            print(f"🎵 Transcribing audio...")
+            logger.info("Transcribing audio...")
             
             result = self.model.transcribe(
                 audio_path,
@@ -65,7 +68,7 @@ class AudioTranscriptor:
                 verbose=False  # Set to True for progress updates
             )
             
-            print("✅ Transcription completed")
+            logger.info("Transcription completed")
             
             # Return comprehensive results
             return {
@@ -77,7 +80,7 @@ class AudioTranscriptor:
             }
             
         except Exception as e:
-            print(f"❌ Transcription failed: {e}")
+            logger.error(f"Transcription failed: {e}")
             return {
                 'text': '',
                 'error': str(e),
@@ -146,7 +149,7 @@ def batch_transcribe(file_paths, model_size="tiny", language="en"):
     results = []
     
     for file_path in file_paths:
-        print(f"\n📁 Processing: {file_path}")
+        logger.info(f"Processing: {file_path}")
         result = transcriptor.transcribe_audio(file_path, language=language)
         results.append(result)
     
@@ -158,24 +161,24 @@ if __name__ == "__main__":
     transcriptor = AudioTranscriptor(model_size="tiny")
     
     # Print model info
-    print(f"\n🔍 Model Info: {transcriptor.get_model_info()}")
+    logger.info(f"Model Info: {transcriptor.get_model_info()}")
     
     # Example video file
     video_path = "t_ZP8rwYBo3_.mp4"
     
     if os.path.exists(video_path):
-        print(f"\n🎬 Processing video file: {video_path}")
+        logger.info(f"Processing video file: {video_path}")
         
         # Basic transcription (English only for speed)
         result = transcriptor.transcribe_audio(video_path, language="en")
         
         if result.get('text'):
-            print(f"\n📝 Transcript:\n{result['text']}")
-            print(f"\n🌍 Language: {result['language']}")
+            logger.info(f"Transcript: {result['text']}")
+            logger.info(f"Language: {result['language']}")
         else:
-            print("❌ No transcript generated")
+            logger.warning("No transcript generated")
             if 'error' in result:
-                print(f"Error: {result['error']}")
+                logger.error(f"Error: {result['error']}")
     else:
-        print(f"❌ Video file not found: {video_path}")
-        print("🔍 Please ensure the file exists in the current directory")
+        logger.error(f"Video file not found: {video_path}")
+        logger.info("Please ensure the file exists in the current directory")

@@ -6,6 +6,7 @@ Main processor that combines location analysis and Google Places services.
 """
 
 import json
+import logging
 import os
 import pandas as pd
 from typing import Dict
@@ -15,6 +16,8 @@ from .location_analyzer import LocationAnalyzer
 from .google_places import GooglePlacesService
 from models.location_models import LocationInfo, PlaceInfo
 
+logger = logging.getLogger(__name__)
+
 class LocationProcessor:
     """Main processor combining location analysis and Google Places services"""
     
@@ -22,7 +25,7 @@ class LocationProcessor:
         """Initialize with API keys"""
         self.analyzer = LocationAnalyzer(gemini_api_key)
         self.places_service = GooglePlacesService(google_maps_api_key)
-        print("✅ Location processor initialized")
+        logger.info("Location processor initialized")
     
     def process_video_results(self, video_id: str, results_dir: str = "results", place_category: list = None) -> LocationInfo:
         """Process results for a specific video ID"""

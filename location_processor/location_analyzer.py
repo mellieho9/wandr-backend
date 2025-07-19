@@ -6,12 +6,14 @@ Uses Gemini API to extract location information from video content.
 """
 
 import json
+import logging
 import os
 from typing import Dict
 import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class LocationAnalyzer:
     """Enhanced location analyzer with comprehensive edge case handling using Gemini API"""
@@ -23,10 +25,10 @@ class LocationAnalyzer:
         if self.api_key:
             genai.configure(api_key=self.api_key)
             self.client = genai.GenerativeModel('gemini-1.5-flash')
-            print("✅ Gemini API initialized")
+            logger.info("Gemini API initialized")
         else:
             self.client = None
-            print("⚠️ No Gemini API key - AI analysis disabled")
+            logger.warning("No Gemini API key - AI analysis disabled")
 
     def analyze_content(self, text_content: str, metadata: Dict = None,
                        categories: list = None) -> Dict:

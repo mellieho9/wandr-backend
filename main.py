@@ -6,32 +6,45 @@ Complete pipeline for processing TikTok videos and extracting location informati
 """
 
 import argparse
+import logging
 import os
 
 from video_processor import TikTokProcessor
 from location_processor import LocationProcessor
 from utils.url_parser import TikTokURLParser
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Console output
+        logging.FileHandler('wandr-backend.log')  # File output
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 def process_tiktok_url(url: str, place_category: list = None, output_dir: str = "results"):
     """Complete pipeline: download video, process content, extract location info"""
     
-    print("🎬 Starting TikTok video processing pipeline...")
+    logger.info("Starting TikTok video processing pipeline...")
     
     # Step 1: Process video
-    print("\n📹 Step 1: Processing video content...")
+    logger.info("Step 1: Processing video content...")
     vision_api_key = os.getenv("VISION_API_KEY")
     if not vision_api_key:
-        print("⚠️ No VISION_API_KEY - OCR disabled")
+        logger.warning("No VISION_API_KEY - OCR disabled")
     
     video_processor = TikTokProcessor(vision_api_key, "tiny")
     video_results = video_processor.process_url(url, "results", "tiktok")
     
     if not video_results['success']:
-        print(f"❌ Video processing failed: {video_results.get('error', 'Unknown error')}")
+        logger.error(f"Video processing failed: {video_results.get('error', 'Unknown error')}")
         return False
     
     # Step 2: Extract location information
-    print("\n📍 Step 2: Extracting location information...")
+    logger.info("Step 2: Extracting location information...")
     location_processor = LocationProcessor()
     
     # Get video ID for file naming
@@ -47,21 +60,25 @@ def process_tiktok_url(url: str, place_category: list = None, output_dir: str = 
         location_processor.save_location_info(location_info, location_output)
         
         # Print summary
-        print(f"\n✅ Pipeline completed successfully!")
-        print(f"📄 Video results: {output_dir}/{video_id}_results.json")
-        print(f"📍 Location info: {location_output}")
-        print(f"\n📋 EXTRACTED INFO:")
-        print(f"🏢 Place: {location_info.name_of_place}")
-        print(f"📂 Categories: {', '.join(location_info.place_category) if location_info.place_category else 'None'}")
-        print(f"📍 Location: {location_info.location}")
-        print(f"🌐 Website: {location_info.website}")
-        print(f"⏰ Time: {location_info.time}")
-        print(f"⭐ Recommendations: {location_info.recommendations[:100]}...")
+        logger.info("Pipeline completed successfully!")
+        logger.info(f"Video results: {output_dir}/{video_id}_results.json")
+        logger.info(f"Location info: {location_output}")
+        logger.info("EXTRACTED INFO:")
+        if location_info.places:
+            primary_place = location_info.places[0]  # Get first place
+            logger.info(f"Place: {primary_place.name}")
+            logger.info(f"Categories: {', '.join(primary_place.categories) if primary_place.categories else 'None'}")
+            logger.info(f"Location: {primary_place.address or primary_place.neighborhood or 'N/A'}")
+            logger.info(f"Website: {primary_place.website or 'N/A'}")
+            logger.info(f"Time: {primary_place.hours or 'N/A'}")
+            logger.info(f"Recommendations: {(primary_place.recommendations or 'N/A')[:100]}...")
+        else:
+            logger.warning("No places found in location info")
         
         return True
         
     except Exception as e:
-        print(f"❌ Location processing failed: {e}")
+        logger.error(f"Location processing failed: {e}")
         return False
 
 def main():
@@ -91,7 +108,7 @@ def main():
     try:
         if args.location_only:
             # Only run location extraction
-            print("📍 Running location extraction only...")
+            logger.info("Running location extraction only...")
             location_processor = LocationProcessor()
             
             # Extract video ID
@@ -103,20 +120,20 @@ def main():
             
             location_output = f"{args.output_dir}/{video_id}_location.json"
             location_processor.save_location_info(location_info, location_output)
-            print(f"✅ Location extraction completed: {location_output}")
+            logger.info(f"Location extraction completed: {location_output}")
             
         elif args.video_only:
             # Only run video processing
-            print("📹 Running video processing only...")
+            logger.info("Running video processing only...")
             vision_api_key = os.getenv("VISION_API_KEY")
             video_processor = TikTokProcessor(vision_api_key, "tiny")
             results = video_processor.process_url(args.url, "results", "tiktok")
             
             if results['success']:
                 video_id = TikTokURLParser.get_file_prefix(args.url)
-                print(f"✅ Video processing completed: results/{video_id}_results.json")
+                logger.info(f"Video processing completed: results/{video_id}_results.json")
             else:
-                print(f"❌ Video processing failed: {results.get('error', 'Unknown error')}")
+                logger.error(f"Video processing failed: {results.get('error', 'Unknown error')}")
                 return 1
         else:
             # Run complete pipeline
@@ -127,10 +144,10 @@ def main():
         return 0
         
     except KeyboardInterrupt:
-        print("\n🛑 Process interrupted by user")
+        logger.info("Process interrupted by user")
         return 1
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}")
         return 1
 
 if __name__ == "__main__":
