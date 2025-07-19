@@ -11,7 +11,7 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 - Output structured JSON data compatible with Notion schema
 - Automated pipeline connecting video processing → location extraction → Notion-ready data
 
-## Current Implementation Status ✅ COMPLETE
+## Current Implementation Status 
 
 ### Completed Components
 
@@ -23,17 +23,18 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 
 #### Location Processing Pipeline (`/location_processor/`)
 - **Location Analyzer** (`location_analyzer.py`): Uses Gemini API to extract location info from video content
-- **Google Places Service** (`google_places.py`): Enhances location data with Google Places API
-- **Main Processor** (`main.py`): LocationProcessor class combining AI analysis with Places API
+- **Google Places Service** (`google_places.py`): Enhances location data with Google Places API and generates Maps links
+- **Main Processor** (`main.py`): LocationProcessor class with Google Maps validation and filtering
 
 #### Notion Integration (`/notion_service/`)
-- **Notion Client** (`notion_client.py`): Direct Notion API integration for updating pages
-- **Webhook Handler** (`webhook_handler.py`): Processes incoming webhooks from Notion
-- **Main Service** (`main.py`): NotionService class for complete Notion integration
+- **Notion Client** (`notion_client.py`): Direct Notion API integration with custom database schema support
+- **Database Entry Creation**: Automated creation of location entries in Notion databases
+- **Hyperlinked Addresses**: Address fields link directly to Google Maps for easy navigation
 
 #### Root Integration (`/main.py`)
-- **Complete Pipeline**: Connects video processing → location extraction in one command
+- **Complete Pipeline**: Connects video processing → location extraction → Notion database creation
 - **Flexible Modes**: Video-only, location-only, or full pipeline processing
+- **Notion Integration**: Optional automatic database entry creation with `--create-notion-entry`
 - **Clean Output**: Organized results with progress indicators and summaries
 
 #### Key Features
@@ -41,9 +42,11 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 - ✅ Multiple Whisper model sizes (tiny/base/small for memory optimization)
 - ✅ Gemini AI integration for intelligent location extraction
 - ✅ Google Places API integration for address lookup and business hours
+- ✅ **Google Maps link generation** - Automatic Google Maps links for all locations
+- ✅ **Location validation** - Only places with valid Google Maps locations are included
 - ✅ Structured JSON output matching Notion schema
-- ✅ Notion API integration for automatic page updates
-- ✅ Webhook handling for automated processing from Notion
+- ✅ **Notion database integration** - Direct creation of database entries with custom schema
+- ✅ **Hyperlinked addresses** - Clickable address fields that open Google Maps
 - ✅ Package-based architecture with clean separation of concerns
 - ✅ Comprehensive error handling and progress reporting
 - ✅ Results saved to organized `results/` folder with video ID naming
@@ -61,15 +64,16 @@ See `requirements.txt` for full list. Key dependencies:
 - `google-generativeai` - Gemini AI for location extraction
 - `googlemaps` - Google Places API integration
 - `pandas` - Data processing for metadata
-- `requests` - HTTP requests for Notion API
+- `notion-client` - Official Notion SDK for Python
 - `python-dotenv` - Environment variable management
 - `pytest` - Testing framework for unit and integration tests
 
 ### Environment Variables Required
 - `VISION_API_KEY` - Google Vision API key for OCR
 - `GEMINI_API_KEY` - Google Gemini API key for location extraction
-- `GOOGLE_MAPS_API_KEY` - Google Maps API key for Places data
-- `NOTION_API_KEY` - Notion API key for page updates
+- `GOOGLE_MAPS_API_KEY` - Google Maps API key for Places data and Maps links
+- `NOTION_API_KEY` - Notion API key for database operations
+- `NOTION_PLACES_DB_ID` - (Optional) Default Notion database ID for places
 
 ## Development Setup
 
@@ -111,20 +115,21 @@ pytest tests/unit/test_location_models.py
 # Process TikTok video and extract location info in one command
 python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --category restaurant chinese
 
-# Just the URL (no categories specified)
-python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/"
+# Complete pipeline with automatic Notion database entry creation
+python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --category restaurant chinese --create-notion-entry --database-id YOUR_DB_ID
+
+# Using environment variable for database ID
+export NOTION_PLACES_DB_ID=your_database_id
+python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --create-notion-entry
 ```
 
-### Notion Integration
+### Notion Database Integration
 ```bash
-# Process TikTok and update Notion page directly
-python -m notion_service.main process-url --page-id YOUR_PAGE_ID --url "https://www.tiktok.com/t/ZP8rwYBo3/" --category restaurant chinese
+# Create database entries from existing location file
+python test.py  # Uses environment variables for API keys and database ID
 
-# Update Notion page from existing location file
-python -m notion_service.main update-page --page-id YOUR_PAGE_ID --location-file results/ZP8rwYBo3_location.json
-
-# Test Notion API connection
-python -m notion_service.main test --page-id YOUR_PAGE_ID
+# Location extraction + Notion entry creation
+python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --location-only --create-notion-entry
 ```
 
 ### Individual Components
@@ -272,17 +277,37 @@ wandr-backend/
 
 ## JSON Output Schema
 
-### Location JSON (Notion-ready)
+### Location JSON Output
 ```json
 {
-  "URL": "https://www.tiktok.com/t/ZP8rwYBo3/",
-  "place_category": ["restaurant", "chinese"],
-  "review": "",
-  "name of place": "Grandma's Home", 
-  "location": "56 W 22nd St, New York, NY 10010, USA",
-  "recommendations": "beef noodle soup, fish cake, lotus root with sticky rice",
-  "time": "Monday: 11:30 AM – 3:00 PM, 5:00 – 9:30 PM\n...",
-  "website": "https://www.grandmashome.us/",
-  "visited": false
+  "url": "https://www.tiktok.com/t/ZP8rwYBo3/",
+  "content_type": "single_place",
+  "places": [
+    {
+      "name": "Grandma's Home",
+      "address": "56 W 22nd St, New York, NY 10010, USA",
+      "neighborhood": "Chelsea",
+      "categories": ["restaurant", "chinese"],
+      "recommendations": "beef noodle soup, fish cake, lotus root with sticky rice",
+      "hours": "Monday: 11:30 AM – 3:00 PM, 5:00 – 9:30 PM\n...",
+      "website": "https://www.grandmashome.us/",
+      "visited": false,
+      "is_popup": false,
+      "maps_link": "https://maps.google.com/maps/place/?q=place_id:ChIJ..."
+    }
+  ]
 }
 ```
+
+### Notion Database Schema
+The system creates entries with these fields:
+- **Name of Place** (Title) - Restaurant/business name
+- **Source URL** (URL) - Original TikTok video URL  
+- **Address** (Rich Text) - Hyperlinked to Google Maps
+- **Categories** (Multi-select) - Place categories/tags
+- **Recommendations** (Rich Text) - Menu items or recommendations
+- **My Personal Review** (Rich Text) - Personal notes (empty by default)
+- **Hours** (Rich Text) - Operating hours
+- **Website** (URL) - Business website
+- **Is Popup** (Checkbox) - Whether it's a temporary/popup location
+- **Visited** (Checkbox) - Whether you've visited (false by default)
