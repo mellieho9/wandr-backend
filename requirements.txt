@@ -11,3 +11,5 @@ openai-whisper
 googlemaps
 pandas
 google-generativeai
+pytest
+pytest-mock
