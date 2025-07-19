@@ -7,7 +7,7 @@ from pathlib import Path
 import pyktok as pyk
 import requests
 
-from utils import ProcessingLogger, TikTokURLParser
+from utils import ProcessingLogger
 
 logger = logging.getLogger(__name__)
 

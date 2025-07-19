@@ -2,12 +2,14 @@ import cv2
 import requests
 import json
 import os
+import logging
 from dotenv import load_dotenv
 
 from utils import ProcessingLogger, ImageUtils, APIRateLimiter, OCRConfig
 
 # Load environment variables from .env file
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class VideoFrameOCR:
     """
@@ -231,8 +233,8 @@ class VideoFrameOCR:
 if __name__ == "__main__":
     api_key = os.getenv("VISION_API_KEY")
     if not api_key:
-        print("❌ VISION_API_KEY not found in environment variables")
-        print("Please set it in your .env file")
+        logger.error("VISION_API_KEY not found in environment variables")
+        logger.error("Please set it in your .env file")
         exit(1)
     
     try:
@@ -242,12 +244,12 @@ if __name__ == "__main__":
         if os.path.exists(video_path):
             results = processor.extract_frames_and_ocr(video_path, frame_interval=3.0)
             
-            print(f"\n📝 OCR Results:")
+            logger.info(f"\nOCR Results:")
             for r in results:
                 if r.get('text'):
-                    print(f"  {r['timestamp']}s: {r['text']}")
+                    logger.info(f"  {r['timestamp']}s: {r['text']}")
         else:
-            print(f"❌ Video file not found: {video_path}")
+            logger.error(f"Video file not found: {video_path}")
             
     except Exception as e:
-        print(f"❌ Error: {e}")
+        logger.error(e)

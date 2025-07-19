@@ -10,7 +10,6 @@ import logging
 import os
 import pandas as pd
 from typing import Dict
-from datetime import datetime
 
 from .location_analyzer import LocationAnalyzer
 from .google_places import GooglePlacesService
