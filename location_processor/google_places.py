@@ -55,7 +55,7 @@ class GooglePlacesService:
                 }
         
         except Exception as e:
-            print(f"⚠️ Google Places search failed: {e}")
+            logger.warning(f"Google Places search failed: {e}")
         
         return None
     
@@ -74,7 +74,7 @@ class GooglePlacesService:
             return details.get('result', {})
             
         except Exception as e:
-            print(f"⚠️ Google Places details failed: {e}")
+            logger.warning(f"Google Places details failed: {e}")
         
         return None
     
@@ -110,10 +110,10 @@ class GooglePlacesService:
                 hours = details['opening_hours']['weekday_text']
                 result['hours'] = '\n'.join(hours)
             
-            print(f"✅ Google Places enhancement completed for: {place_name}")
+            logger.info(f"Google Places enhancement completed for: {place_name}")
             
         except Exception as e:
-            print(f"⚠️ Google Places enhancement failed: {e}")
+            logger.warning(f"Google Places enhancement failed: {e}")
         
         return result
     

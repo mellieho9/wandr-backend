@@ -41,11 +41,9 @@ class LocationProcessor:
     def extract_from_files(self, results_file: str, metadata_file: str = None, place_category: list = None) -> LocationInfo:
         """Extract location info from video processing results"""
         
-        # Load results JSON
         with open(results_file, 'r', encoding='utf-8') as f:
             results = json.load(f)
         
-        # Load metadata CSV if available
         metadata = None
         if metadata_file and os.path.exists(metadata_file):
             try:
@@ -53,19 +51,14 @@ class LocationProcessor:
                 if not metadata_df.empty:
                     metadata = metadata_df.iloc[0].to_dict()
             except Exception as e:
-                print(f"⚠️ Could not load metadata: {e}")
+                logger.warning(f"Could not load metadata: {e}")
         
-        # Extract basic info
         url = results.get('original_url', '')
-        timestamp = results.get('timestamp', datetime.now().isoformat())
-        
-        # Get combined text for analysis
+
         combined_text = self._get_combined_text(results)
         
-        # Use analyzer for intelligent extraction
         analysis_result = self.analyzer.analyze_content(combined_text, metadata, place_category)
         
-        # Get content type
         content_type = analysis_result.get('content_analysis', {}).get('content_type', 'single_place')
         
         # Process all places
@@ -73,7 +66,6 @@ class LocationProcessor:
         
         if analysis_result.get('places'):
             for place_data in analysis_result['places']:
-                # Create PlaceInfo object
                 place_info = PlaceInfo(
                     name=place_data.get('name', ''),
                     address=place_data.get('address'),
@@ -101,7 +93,6 @@ class LocationProcessor:
                 
                 places_list.append(place_info)
         
-        # Combine results
         return LocationInfo(
             url=url,
             content_type=content_type,
@@ -128,7 +119,7 @@ class LocationProcessor:
         """Save location info to JSON file"""
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(location_info.to_dict(), f, indent=2, ensure_ascii=False)
-        print(f"💾 Location info saved to: {output_file}")
+        logger.info(f"Location info saved to: {output_file}")
 
 def main():
     """Command line interface"""
@@ -142,24 +133,22 @@ def main():
     
     args = parser.parse_args()
     
-    # Initialize processor
     processor = LocationProcessor()
     
-    # Process video
     try:
         location_info = processor.process_video_results(args.video_id, args.results_dir, args.category)
         
         # Print results
-        print(f"\n📍 EXTRACTED LOCATION INFO:")
-        print(f"🔗 URL: {location_info.url}")
-        print(f"🏪 Content Type: {location_info.content_type}")
-        print(f"📍 Total Places: {len(location_info.places)}")
+        logger.info(f"EXTRACTED LOCATION INFO:")
+        logger.info(f"URL: {location_info.url}")
+        logger.info(f"Content Type: {location_info.content_type}")
+        logger.info(f"Total Places: {len(location_info.places)}")
         for i, place in enumerate(location_info.places):
-            print(f"  {i+1}. {place.name} ({'visited' if place.visited else 'not visited'})")
+            logger.info(f"  {i+1}. {place.name} ({'visited' if place.visited else 'not visited'})")
             if place.address:
-                print(f"     📍 {place.address}")
+                logger.info(f"     {place.address}")
             if place.recommendations:
-                print(f"     ⭐ {place.recommendations[:50]}...")
+                logger.info(f"     {place.recommendations[:50]}...")
         
         # Save to file
         if args.output:
@@ -170,7 +159,7 @@ def main():
         processor.save_location_info(location_info, output_file)
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        logger.error(e)
         return 1
     
     return 0

@@ -110,11 +110,11 @@ Extract information in this EXACT JSON format:
                 response_text = response_text.split('```')[1].split('```')[0]
 
             extracted_data = json.loads(response_text)
-            print("✅ Enhanced Gemini extraction completed", extracted_data)
+            logger.info("Enhanced Gemini extraction completed ", extracted_data)
             return extracted_data
 
         except (json.JSONDecodeError, ValueError, KeyError) as ex:
-            print(f"⚠️ Gemini extraction failed: {ex}")
+            logger.warning(f"Gemini extraction failed: {ex}")
             return self._get_empty_result()
 
     def _get_empty_result(self) -> Dict:
