@@ -47,6 +47,10 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 - ✅ Package-based architecture with clean separation of concerns
 - ✅ Comprehensive error handling and progress reporting
 - ✅ Results saved to organized `results/` folder with video ID naming
+- ✅ **Unified logging system** - Replaced custom prints with proper Python logging
+- ✅ **Comprehensive testing framework** - Unit and integration tests with pytest
+- ✅ **TikTok carousel support** - Enhanced downloader for photo carousels
+- ✅ **Edge case handling** - Improved robustness for various content types
 
 ### Dependencies
 See `requirements.txt` for full list. Key dependencies:
@@ -59,6 +63,7 @@ See `requirements.txt` for full list. Key dependencies:
 - `pandas` - Data processing for metadata
 - `requests` - HTTP requests for Notion API
 - `python-dotenv` - Environment variable management
+- `pytest` - Testing framework for unit and integration tests
 
 ### Environment Variables Required
 - `VISION_API_KEY` - Google Vision API key for OCR
@@ -78,6 +83,25 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env  # Create .env file with your API keys
+```
+
+## Testing
+
+The project includes comprehensive testing with pytest:
+
+```bash
+# Run all tests
+make test
+
+# Run specific test categories
+pytest tests/unit/          # Unit tests only
+pytest tests/integration/   # Integration tests only
+
+# Run tests with coverage
+pytest --cov=. tests/
+
+# Run specific test file
+pytest tests/unit/test_location_models.py
 ```
 
 ## Usage
@@ -208,12 +232,12 @@ wandr-backend/
 ├── video_processor/           # 📹 Video processing package
 │   ├── __init__.py           
 │   ├── main.py               # TikTokProcessor class
-│   ├── video_downloader.py   # TikTok video downloading
+│   ├── video_downloader.py   # TikTok video downloading (with carousel support)
 │   ├── audio_transcriptor.py # Audio transcription
-│   └── video_frame_ocr.py    # Frame OCR processing
+│   └── video_frame_ocr.py    # Frame OCR processing (enhanced)
 ├── location_processor/        # 📍 Location extraction package
 │   ├── __init__.py           
-│   ├── main.py               # LocationProcessor class
+│   ├── main.py               # LocationProcessor class (improved logging)
 │   ├── location_analyzer.py  # Gemini AI location analysis
 │   └── google_places.py      # Google Places API integration
 ├── notion_service/            # 🔗 Notion API integration package
@@ -221,10 +245,24 @@ wandr-backend/
 │   ├── main.py               # NotionService class
 │   ├── notion_client.py      # Direct Notion API client
 │   └── webhook_handler.py    # Webhook processing logic
+├── tests/                     # 🧪 Testing framework
+│   ├── __init__.py           
+│   ├── conftest.py           # Pytest configuration
+│   ├── unit/                 # Unit tests
+│   │   ├── __init__.py
+│   │   ├── test_location_models.py
+│   │   └── test_url_parser.py
+│   └── integration/          # Integration tests
+│       ├── __init__.py
+│       ├── test_location_processor.py
+│       ├── test_main_pipeline.py
+│       └── test_video_processor.py
 ├── results/                   # 📊 Generated output files
 │   ├── {video_id}_results.json    # Video processing results
 │   ├── {video_id}_metadata.csv    # TikTok metadata
 │   └── {video_id}_location.json   # Notion-ready location data
+├── Makefile                   # Build and test commands
+├── pytest.ini                # Pytest configuration
 ├── requirements.txt          # Python dependencies
 ├── notion_schema.md          # Notion database schema
 ├── .env                      # Environment variables (ignored)
