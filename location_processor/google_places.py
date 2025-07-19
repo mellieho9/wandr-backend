@@ -116,16 +116,3 @@ class GooglePlacesService:
             logger.warning(f"Google Places enhancement failed: {e}")
         
         return result
-    
-    def validate_address(self, address: str) -> bool:
-        """Validate if an address exists"""
-        
-        if not self.client:
-            return False
-        
-        try:
-            geocode_result = self.client.geocode(address)
-            return len(geocode_result) > 0
-            
-        except Exception:
-            return False

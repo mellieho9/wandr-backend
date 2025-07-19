@@ -133,31 +133,6 @@ Extract information in this EXACT JSON format:
             }
         }
 
-    def analyze_content_legacy(self, text_content: str, metadata: Dict = None) -> Dict:
-        """Legacy method for backward compatibility"""
-        enhanced_result = self.analyze_content(text_content, metadata)
-
-        # Convert to legacy format
-        if enhanced_result.get('places'):
-            primary_place = next(
-                (p for p in enhanced_result['places'] if p.get('is_primary')),
-                enhanced_result['places'][0]
-            )
-            return {
-                'name_of_place': primary_place.get('name', ''),
-                'recommendations': primary_place.get('recommendations', ''),
-                'location_hint': (primary_place.get('address', '') or
-                                primary_place.get('neighborhood', '')),
-                'time': primary_place.get('hours', '')
-            }
-
-        return {
-            'name_of_place': '',
-            'recommendations': '',
-            'location_hint': '',
-            'time': ''
-        }
-
     def extract_place_name(self, text_content: str, metadata: Dict = None) -> str:
         """Extract just the place name from content"""
         analysis = self.analyze_content(text_content, metadata)
