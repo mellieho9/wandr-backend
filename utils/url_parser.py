@@ -4,16 +4,7 @@ Handles all URL parsing, video ID extraction, and filename generation
 """
 
 from typing import Tuple, List, Optional
-from dataclasses import dataclass
-
-
-@dataclass
-class URLComponents:
-    """Parsed components of a TikTok URL"""
-    video_id: str
-    username: Optional[str]
-    content_type: str  # 'short', 'video', 'photo'
-    raw_url: str
+from models.url_models import URLComponents
 
 
 class TikTokURLParser:

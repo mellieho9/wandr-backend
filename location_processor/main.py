@@ -9,38 +9,11 @@ import json
 import os
 import pandas as pd
 from typing import Dict
-from dataclasses import dataclass
 from datetime import datetime
 
 from .location_analyzer import LocationAnalyzer
 from .google_places import GooglePlacesService
-
-@dataclass
-class LocationInfo:
-    """Structured location information for Notion"""
-    url: str
-    place_category: list
-    review: str
-    name_of_place: str
-    location: str
-    recommendations: str
-    time: str
-    website: str
-    visited: bool
-    
-    def to_dict(self) -> Dict:
-        """Convert to dictionary for JSON export"""
-        return {
-            'URL': self.url,
-            'place_category': self.place_category,
-            'review': self.review,
-            'name of place': self.name_of_place,
-            'location': self.location,
-            'recommendations': self.recommendations,
-            'time': self.time,
-            'website': self.website,
-            'visited': self.visited
-        }
+from models.location_models import LocationInfo, PlaceInfo
 
 class LocationProcessor:
     """Main processor combining location analysis and Google Places services"""
@@ -87,42 +60,49 @@ class LocationProcessor:
         combined_text = self._get_combined_text(results)
         
         # Use analyzer for intelligent extraction
-        analysis_result = self.analyzer.analyze_content(combined_text, metadata)
+        analysis_result = self.analyzer.analyze_content(combined_text, metadata, place_category)
         
-        # Enhance with Google Places data
-        places_data = {}
-        place_name = analysis_result.get('name_of_place', '')
-        location_hint = analysis_result.get('location_hint', '')
+        # Get content type
+        content_type = analysis_result.get('content_analysis', {}).get('content_type', 'single_place')
         
-        if place_name:
-            places_data = self.places_service.enhance_location_info(place_name, location_hint)
+        # Process all places
+        places_list = []
         
-        # Get final location (prefer Google Places address, fallback to hint)
-        final_location = places_data.get('formatted_address', location_hint)
-        
-        # Get recommendations without hours/website
-        recommendations = analysis_result.get('recommendations', '')
-        if not isinstance(recommendations, str):
-            recommendations = str(recommendations) if recommendations else ''
-        
-        # Get hours for time field (prefer Gemini extraction, fallback to Google Places, then timestamp)
-        gemini_time = analysis_result.get('time', '')
-        time_info = gemini_time if gemini_time else places_data.get('hours', timestamp)
-        
-        # Get website
-        website = places_data.get('website', '')
+        if analysis_result.get('places'):
+            for place_data in analysis_result['places']:
+                # Create PlaceInfo object
+                place_info = PlaceInfo(
+                    name=place_data.get('name', ''),
+                    address=place_data.get('address'),
+                    neighborhood=place_data.get('neighborhood'),
+                    categories=place_data.get('categories', []),
+                    recommendations=place_data.get('recommendations'),
+                    hours=place_data.get('hours'),
+                    website=place_data.get('website'),
+                    visited=False,  # Default to not visited
+                    is_popup=place_data.get('is_popup', False)
+                )
+                
+                # Enhance with Google Places data for all places
+                if place_info.name:
+                    location_hint = place_info.address or place_info.neighborhood or ''
+                    places_data = self.places_service.enhance_location_info(place_info.name, location_hint)
+                    
+                    # Update place info with Google Places data
+                    if places_data.get('formatted_address'):
+                        place_info.address = places_data['formatted_address']
+                    if places_data.get('website'):
+                        place_info.website = places_data['website']
+                    if places_data.get('hours') and not place_info.hours:
+                        place_info.hours = places_data['hours']
+                
+                places_list.append(place_info)
         
         # Combine results
         return LocationInfo(
             url=url,
-            place_category=place_category or [],
-            review='',  # Leave empty for user to fill in Notion
-            name_of_place=place_name,
-            location=final_location,
-            recommendations=recommendations.strip(),
-            time=time_info,
-            website=website,
-            visited=False  # Default to not visited
+            content_type=content_type,
+            places=places_list if places_list else []
         )
     
     def _get_combined_text(self, results: Dict) -> str:
@@ -168,11 +148,15 @@ def main():
         
         # Print results
         print(f"\n📍 EXTRACTED LOCATION INFO:")
-        print(f"🏢 Place: {location_info.name_of_place}")
-        print(f"📂 Categories: {', '.join(location_info.place_category)}")
-        print(f"📍 Location: {location_info.location}")
-        print(f"💭 Review: {location_info.review[:100]}...")
-        print(f"⭐ Recommendations: {location_info.recommendations[:100]}...")
+        print(f"🔗 URL: {location_info.url}")
+        print(f"🏪 Content Type: {location_info.content_type}")
+        print(f"📍 Total Places: {len(location_info.places)}")
+        for i, place in enumerate(location_info.places):
+            print(f"  {i+1}. {place.name} ({'visited' if place.visited else 'not visited'})")
+            if place.address:
+                print(f"     📍 {place.address}")
+            if place.recommendations:
+                print(f"     ⭐ {place.recommendations[:50]}...")
         
         # Save to file
         if args.output:

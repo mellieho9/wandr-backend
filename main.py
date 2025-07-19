@@ -10,6 +10,7 @@ import os
 
 from video_processor import TikTokProcessor
 from location_processor import LocationProcessor
+from utils.url_parser import TikTokURLParser
 
 def process_tiktok_url(url: str, place_category: list = None, output_dir: str = "results"):
     """Complete pipeline: download video, process content, extract location info"""
@@ -34,7 +35,7 @@ def process_tiktok_url(url: str, place_category: list = None, output_dir: str = 
     location_processor = LocationProcessor()
     
     # Get video ID for file naming
-    video_id = video_processor._extract_video_id(url)
+    video_id = TikTokURLParser.get_file_prefix(url)
     
     try:
         location_info = location_processor.process_video_results(
@@ -94,8 +95,7 @@ def main():
             location_processor = LocationProcessor()
             
             # Extract video ID
-            temp_processor = TikTokProcessor()
-            video_id = temp_processor._extract_video_id(args.url)
+            video_id = TikTokURLParser.get_file_prefix(args.url)
             
             location_info = location_processor.process_video_results(
                 video_id, args.output_dir, args.category
@@ -113,7 +113,7 @@ def main():
             results = video_processor.process_url(args.url, "results", "tiktok")
             
             if results['success']:
-                video_id = video_processor._extract_video_id(args.url)
+                video_id = TikTokURLParser.get_file_prefix(args.url)
                 print(f"✅ Video processing completed: results/{video_id}_results.json")
             else:
                 print(f"❌ Video processing failed: {results.get('error', 'Unknown error')}")
