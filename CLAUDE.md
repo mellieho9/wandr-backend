@@ -29,7 +29,9 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 #### Notion Integration (`/notion_service/`)
 - **Notion Client** (`notion_client.py`): Direct Notion API integration with custom database schema support
 - **Database Entry Creation**: Automated creation of location entries in Notion databases
-- **Hyperlinked Addresses**: Address fields link directly to Google Maps for easy navigation
+- **Hyperlinked Addresses**: Address fields automatically link to Google Maps for one-click navigation
+- **Batch Processing**: Automated daily processing of URLs from source databases
+- **Today's URL Processing**: Query and process all URLs added to source database today
 
 #### Root Integration (`/main.py`)
 - **Complete Pipeline**: Connects video processing → location extraction → Notion database creation
@@ -47,6 +49,9 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 - ✅ Structured JSON output matching Notion schema
 - ✅ **Notion database integration** - Direct creation of database entries with custom schema
 - ✅ **Hyperlinked addresses** - Clickable address fields that open Google Maps
+- ✅ **Automated daily processing** - Batch process all URLs added to source database today
+- ✅ **Modular architecture** - Clean separation with models/, utils/, and service packages
+- ✅ **Advanced URL parsing** - TikTok URL parsing with multiple format support
 - ✅ Package-based architecture with clean separation of concerns
 - ✅ Comprehensive error handling and progress reporting
 - ✅ Results saved to organized `results/` folder with video ID naming
@@ -74,6 +79,7 @@ See `requirements.txt` for full list. Key dependencies:
 - `GOOGLE_MAPS_API_KEY` - Google Maps API key for Places data and Maps links
 - `NOTION_API_KEY` - Notion API key for database operations
 - `NOTION_PLACES_DB_ID` - (Optional) Default Notion database ID for places
+- `NOTION_SOURCE_DB_ID` - (Optional) Source database ID for automated daily processing
 
 ## Development Setup
 
@@ -121,6 +127,24 @@ python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --category restaurant
 # Using environment variable for database ID
 export NOTION_PLACES_DB_ID=your_database_id
 python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --create-notion-entry
+```
+
+### Automated Daily Processing
+```bash
+# Process all URLs added to source database today and create place entries
+python main.py --process-todays-urls --source-database-id SOURCE_DB_ID --places-database-id PLACES_DB_ID
+
+# Using environment variables for database IDs
+export NOTION_SOURCE_DB_ID=your_source_database_id
+export NOTION_PLACES_DB_ID=your_places_database_id
+python main.py --process-todays-urls
+
+# This feature automatically:
+# - Queries source database for URLs added today
+# - Processes each TikTok video (download, transcribe, OCR)
+# - Extracts location information using Gemini AI
+# - Enhances with Google Places data
+# - Creates entries in places database with hyperlinked addresses
 ```
 
 ### Notion Database Integration
@@ -185,55 +209,94 @@ For automated processing, you can set up webhooks:
 
 ## Architecture Flow
 
+### Single URL Processing
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   TikTok URL    │───▶│  utils/          │───▶│  Video          │───▶│  Location       │
+│   Input         │    │  url_parser.py   │    │  Processor      │    │  Processor      │
+└─────────────────┘    └──────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                        │                        │
+                                ▼                        │                        │
+                       ┌─────────────────┐              │                        │
+                       │ URL Components  │              │                        │
+                       │ & File Prefixes │              │                        │
+                       └─────────────────┘              │                        │
+                                                        │                        │
+                                ┌───────────────────────┼─────────────┐         │
+                                │                       ▼             │         │
+                                │  ┌─────────────┐ ┌──────────┐      │         │
+                                │  │  pyktok     │ │ Whisper  │      │         │
+                                │  │ Downloader  │ │   Audio  │      │         │
+                                │  │             │ │Transcript│      │         │
+                                │  └─────────────┘ └──────────┘      │         │
+                                │  ┌─────────────────────────┐       │         │
+                                │  │   Google Vision OCR     │       │         │
+                                │  │   (Frame Text Extract)  │       │         │
+                                │  └─────────────────────────┘       │         │
+                                └─────────────────────────────────────┘         │
+                                                        │                        │
+                                                        ▼                        │
+                                               ┌─────────────────┐              │
+                                               │   results/      │              │
+                                               │ video_results   │              │
+                                               │    .json        │              │
+                                               └─────────────────┘              │
+                                                                                │
+                                        ┌───────────────────────────────────────┼──────────────┐
+                                        │                                       ▼              │
+                                        │  ┌─────────────┐ ┌──────────────────────────────────┐│
+                                        │  │   Gemini    │ │      Google Places              ││
+                                        │  │     AI      │ │   (Address, Hours, Website)     ││
+                                        │  │ (Location   │ │   + Google Maps Link Gen        ││
+                                        │  │ Analysis)   │ │                                 ││
+                                        │  └─────────────┘ └──────────────────────────────────┘│
+                                        └─────────────────────────────────────────────────────┘
+                                                                                │
+                                                                                ▼
+                                                                       ┌─────────────────┐
+                                                                       │ models/         │
+                                                                       │ location_models │
+                                                                       │ (PlaceInfo)     │
+                                                                       └─────────────────┘
+                                                                                │
+                                                                                ▼
+                                                                       ┌─────────────────┐
+                                                                       │   results/      │
+                                                                       │ location_info   │
+                                                                       │ .json (Notion)  │
+                                                                       └─────────────────┘
+                                                                                │
+                                                                                ▼
+                                                                       ┌─────────────────┐
+                                                                       │ notion_service/ │
+                                                                       │ notion_client   │
+                                                                       │ (Hyperlinked)   │
+                                                                       └─────────────────┘
+```
+
+### Automated Daily Processing
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   TikTok URL    │───▶│  Video           │───▶│  Location       │
-│   Input         │    │  Processor       │    │  Processor      │
+│ Notion Source   │───▶│  notion_service/ │───▶│   For Each URL  │
+│   Database      │    │  notion_client   │    │  Run Pipeline   │
+│ (Today's URLs)  │    │ get_todays_urls  │    │     Above       │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
                                 │                        │
-                ┌───────────────┼─────────────┐         │
-                │               ▼             │         │
-                │  ┌─────────────┐ ┌──────────┐│         │
-                │  │  pyktok     │ │ Whisper  ││         │
-                │  │ Downloader  │ │   Audio  ││         │
-                │  │             │ │Transcript││         │
-                │  └─────────────┘ └──────────┘│         │
-                │  ┌─────────────────────────┐ │         │
-                │  │   Google Vision OCR     │ │         │
-                │  │   (Frame Text Extract)  │ │         │
-                │  └─────────────────────────┘ │         │
-                └─────────────────────────────┘         │
-                                │                        │
-                                ▼                        │
-                       ┌─────────────────┐              │
-                       │   results/      │              │
-                       │ video_results   │              │
-                       │    .json        │              │
-                       └─────────────────┘              │
-                                                        │
-                        ┌───────────────────────────────┼──────────────┐
-                        │                               ▼              │
-                        │  ┌─────────────┐ ┌──────────────────────────┐│
-                        │  │   Gemini    │ │      Google Places       ││
-                        │  │     AI      │ │   (Address, Hours, Web)  ││
-                        │  │ (Location   │ │                          ││
-                        │  │ Analysis)   │ │                          ││
-                        │  └─────────────┘ └──────────────────────────┘│
-                        └─────────────────────────────────────────────┘
-                                                        │
-                                                        ▼
-                                               ┌─────────────────┐
-                                               │   results/      │
-                                               │ location_info   │
-                                               │ .json (Notion)  │
-                                               └─────────────────┘
+                                ▼                        ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │ Filtered URLs   │    │ Notion Places   │
+                       │  (Created Today)│    │   Database      │
+                       └─────────────────┘    │ (Auto-created   │
+                                              │  Entries with   │
+                                              │ Hyperlinks)     │
+                                              └─────────────────┘
 ```
 
 ## File Structure
 
 ```
 wandr-backend/
-├── main.py                    # 🎯 Root pipeline orchestrator
+├── main.py                    # 🎯 Root pipeline orchestrator with batch processing
 ├── video_processor/           # 📹 Video processing package
 │   ├── __init__.py           
 │   ├── main.py               # TikTokProcessor class
@@ -247,9 +310,17 @@ wandr-backend/
 │   └── google_places.py      # Google Places API integration
 ├── notion_service/            # 🔗 Notion API integration package
 │   ├── __init__.py           
-│   ├── main.py               # NotionService class
-│   ├── notion_client.py      # Direct Notion API client
-│   └── webhook_handler.py    # Webhook processing logic
+│   ├── notion_client.py      # Direct Notion API client with batch processing
+├── models/                    # 📋 Data models and schemas
+│   ├── __init__.py           
+│   ├── location_models.py    # PlaceInfo and LocationInfo data classes
+│   ├── url_models.py         # URL parsing data structures
+│   └── my_link.py            # Link processing utilities
+├── utils/                     # 🛠️ Utility modules
+│   ├── __init__.py           
+│   ├── url_parser.py         # TikTok URL parsing and filename generation
+│   ├── logger.py             # Logging configuration
+│   └── image_utils.py        # Image processing utilities
 ├── tests/                     # 🧪 Testing framework
 │   ├── __init__.py           
 │   ├── conftest.py           # Pytest configuration
@@ -269,7 +340,8 @@ wandr-backend/
 ├── Makefile                   # Build and test commands
 ├── pytest.ini                # Pytest configuration
 ├── requirements.txt          # Python dependencies
-├── notion_schema.md          # Notion database schema
+├── test_urls.md              # Test URLs for development
+├── wandr-backend.log         # Application log file
 ├── .env                      # Environment variables (ignored)
 ├── .gitignore               # Git ignore rules
 └── CLAUDE.md                # This file
@@ -303,7 +375,7 @@ wandr-backend/
 The system creates entries with these fields:
 - **Name of Place** (Title) - Restaurant/business name
 - **Source URL** (URL) - Original TikTok video URL  
-- **Address** (Rich Text) - Hyperlinked to Google Maps
+- **Address** (Rich Text) - Automatically hyperlinked to Google Maps for one-click navigation
 - **Categories** (Multi-select) - Place categories/tags
 - **Recommendations** (Rich Text) - Menu items or recommendations
 - **My Personal Review** (Rich Text) - Personal notes (empty by default)
@@ -311,3 +383,5 @@ The system creates entries with these fields:
 - **Website** (URL) - Business website
 - **Is Popup** (Checkbox) - Whether it's a temporary/popup location
 - **Visited** (Checkbox) - Whether you've visited (false by default)
+
+**Note**: Address fields are automatically converted to clickable links that open the location in Google Maps, eliminating the need to manually copy addresses for navigation.
