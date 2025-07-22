@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch, Mock
-from main import process_tiktok_url
+from pipeline_runner import run_complete_pipeline
 from models.location_models import LocationInfo, PlaceInfo
 
 
@@ -13,13 +13,13 @@ class TestMainPipeline:
         """Test the complete pipeline with mocked components"""
         
         # Mock video processing
-        with patch('main.TikTokProcessor') as mock_video_processor:
+        with patch('pipeline_runner.TikTokProcessor') as mock_video_processor:
             mock_instance = Mock()
             mock_instance.process_url.return_value = sample_video_results
             mock_video_processor.return_value = mock_instance
             
             # Mock location processing
-            with patch('main.LocationProcessor') as mock_location_processor:
+            with patch('pipeline_runner.LocationProcessor') as mock_location_processor:
                 mock_loc_instance = Mock()
                 
                 # Create LocationInfo object from sample data
@@ -39,11 +39,11 @@ class TestMainPipeline:
                 mock_location_processor.return_value = mock_loc_instance
                 
                 # Mock URL parser
-                with patch('main.TikTokURLParser.get_file_prefix') as mock_prefix:
+                with patch('pipeline_runner.TikTokURLParser.get_file_prefix') as mock_prefix:
                     mock_prefix.return_value = "test_video_123"
                     
-                    result = process_tiktok_url(
-                        "https://www.tiktok.com/@test/video/123456789",
+                    result = run_complete_pipeline(
+                        url="https://www.tiktok.com/@test/video/123456789",
                         place_category=["restaurant"],
                         output_dir=temp_dir
                     )
@@ -56,7 +56,7 @@ class TestMainPipeline:
     def test_pipeline_video_processing_failure(self, temp_dir):
         """Test pipeline when video processing fails"""
         
-        with patch('main.TikTokProcessor') as mock_video_processor:
+        with patch('pipeline_runner.TikTokProcessor') as mock_video_processor:
             mock_instance = Mock()
             mock_instance.process_url.return_value = {
                 'success': False,
@@ -64,8 +64,8 @@ class TestMainPipeline:
             }
             mock_video_processor.return_value = mock_instance
             
-            result = process_tiktok_url(
-                "https://www.tiktok.com/@test/video/123456789",
+            result = run_complete_pipeline(
+                url="https://www.tiktok.com/@test/video/123456789",
                 output_dir=temp_dir
             )
             

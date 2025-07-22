@@ -70,11 +70,13 @@ class TestLocationProcessorIntegration:
         with patch.object(processor.analyzer, 'analyze_content') as mock_analyze:
             mock_analyze.return_value = mock_gemini_response
             
-            with patch.object(processor.places_service, 'search_place') as mock_places:
+            with patch.object(processor.places_service, 'enhance_location_info') as mock_places:
                 mock_places.return_value = {
+                    'has_valid_location': True,
                     'formatted_address': '123 Main St, Brooklyn, NY',
                     'website': 'https://example.com',
-                    'opening_hours': {'weekday_text': ['Mon-Sun: 11AM-11PM']}
+                    'hours': 'Mon-Sun: 11AM-11PM',
+                    'maps_link': 'https://maps.google.com/?q=place_id:ChIJTest123'
                 }
                 
                 result = processor.process_video_results("test", temp_dir)

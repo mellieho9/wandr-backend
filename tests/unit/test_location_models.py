@@ -34,7 +34,8 @@ class TestPlaceInfo:
             'hours': None,
             'website': None,
             'visited': False,
-            'is_popup': False
+            'is_popup': False,
+            'maps_link': None
         }
         assert result == expected
 
