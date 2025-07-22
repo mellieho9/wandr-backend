@@ -6,17 +6,17 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
-from config import config
+from utils.config import config
 from services.video_processor import TikTokProcessor
 from services.location_processor import LocationProcessor
-from notion_handlern_service.notion_client import NotionClient
-from notion_handlern_service.location_handler import LocationHandler
-from transformers.location_transformer import LocationToNotionTransformer
+from services.notion_service.notion_client import NotionClient
+from services.notion_service.location_handler import LocationHandler
+from utils.location_transformer import LocationToNotionTransformer
 from models.pipeline_models import (
     PipelineOptions, ProcessingResult, ProcessingStatus,
     VideoProcessingResult, LocationProcessingResult, NotionProcessingResult
 )
-from exceptions import VideoProcessingError, LocationExtractionError, NotionIntegrationError
+from utils.exceptions import VideoProcessingError, LocationExtractionError, NotionIntegrationError
 from utils.url_parser import TikTokURLParser
 
 logger = logging.getLogger(__name__)

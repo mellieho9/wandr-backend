@@ -9,7 +9,7 @@ import logging
 from typing import Dict, Optional
 import googlemaps
 
-from config import config
+from utils.config import config
 logger = logging.getLogger(__name__)
 
 class GooglePlacesService:

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
-from constants import DEFAULT_WHISPER_MODEL, DEFAULT_FRAME_INTERVAL, DEFAULT_MAX_FRAMES, DEFAULT_OUTPUT_DIR
+from utils.constants import DEFAULT_WHISPER_MODEL, DEFAULT_FRAME_INTERVAL, DEFAULT_MAX_FRAMES, DEFAULT_OUTPUT_DIR
 
 
 class ProcessingStatus(Enum):

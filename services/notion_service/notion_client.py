@@ -6,12 +6,11 @@ including creating new entries and updating existing pages.
 """
 
 import logging
-from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from notion_client import Client
 from notion_client.errors import APIResponseError
 
-from config import config
+from utils.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -181,26 +180,3 @@ class NotionClient:
         
         url_processor = URLProcessor(self)
         return url_processor.update_entry_status(page_id, status, status_property)
-    
-    def process_pending_urls(self, source_database_id: str, places_database_id: str, 
-                            url_property: str = "URL", date_property: str = "Created", 
-                            status_property: str = "Status") -> Dict[str, Any]:
-        """
-        Process all pending URLs from today and create place entries, updating status accordingly.
-        
-        Args:
-            source_database_id: Database ID to pull URLs from
-            places_database_id: Database ID to create place entries in
-            url_property: Name of the URL property in source database
-            date_property: Name of the date property to filter by
-            status_property: Name of the status property to update
-            
-        Returns:
-            Summary of processing results
-        """
-        from .url_processor import URLProcessor
-        
-        url_processor = URLProcessor(self)
-        return url_processor.process_pending_urls(
-            source_database_id, places_database_id, url_property, date_property, status_property
-        )

@@ -228,7 +228,7 @@ class VideoFrameOCR:
 
 # Example usage and testing
 if __name__ == "__main__":
-    from config import config
+    from utils.config import config
     
     api_key = config.get_vision_api_key()
     if not api_key:

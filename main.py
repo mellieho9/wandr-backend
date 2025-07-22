@@ -10,10 +10,10 @@ import sys
 from pathlib import Path
 
 from utils.logging_config import setup_logging
-from config import config
+from utils.config import config
 from models.pipeline_models import PipelineOptions
 from pipeline.orchestrator import PipelineOrchestrator
-from exceptions import ConfigurationError, WandrError
+from utils.exceptions import ConfigurationError, WandrError
 
 # Setup logging
 setup_logging(level="INFO", log_file="wandr-backend.log", console_output=True)

@@ -10,7 +10,7 @@ import logging
 from typing import Dict
 import google.generativeai as genai
 
-from config import config
+from utils.config import config
 logger = logging.getLogger(__name__)
 
 class LocationAnalyzer:

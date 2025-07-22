@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, timezone
-from notion_handlern_service.url_processor import URLProcessor
+from services.notion_service.url_processor import URLProcessor
 
 
 class TestURLProcessor:
@@ -15,7 +15,7 @@ class TestURLProcessor:
         assert processor.notion_client == mock_notion_client
     
     @pytest.mark.unit
-    @patch('notion_handlern_service.url_processor.datetime')
+    @patch('services.notion_service.url_processor.datetime')
     def test_get_pending_urls_success(self, mock_datetime):
         """Test getting pending URLs successfully"""
         # Mock datetime to return a consistent date
