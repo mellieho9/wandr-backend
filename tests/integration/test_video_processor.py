@@ -2,7 +2,7 @@ import pytest
 import json
 import os
 from unittest.mock import Mock, patch
-from video_processor import TikTokProcessor
+from services.video_processor import TikTokProcessor
 
 
 class TestTikTokProcessorIntegration:

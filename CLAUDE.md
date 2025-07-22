@@ -5,28 +5,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Complete TikTok Video Processing and Location Extraction Pipeline:
+
 - Process TikTok videos to extract text and audio content
 - Use AI (Gemini API) to extract location information from video content
 - Enhance location data with Google Places API for address, hours, and website
 - Output structured JSON data compatible with Notion schema
 - Automated pipeline connecting video processing → location extraction → Notion-ready data
 
-## Current Implementation Status 
+## Current Implementation Status
 
 ### Completed Components
 
 #### Video Processing Pipeline (`/video_processor/`)
+
 - **TikTok Downloader** (`video_downloader.py`): Downloads TikTok videos using pyktok with smart folder organization
 - **Audio Transcription** (`audio_transcriptor.py`): Transcribes audio using OpenAI Whisper (local model)
 - **Frame OCR** (`video_frame_ocr.py`): Extracts text from video frames using Google Vision API
 - **Main Pipeline** (`main.py`): TikTokProcessor class integrating all video processing components
 
 #### Location Processing Pipeline (`/location_processor/`)
+
 - **Location Analyzer** (`location_analyzer.py`): Uses Gemini API to extract location info from video content
 - **Google Places Service** (`google_places.py`): Enhances location data with Google Places API and generates Maps links
 - **Main Processor** (`main.py`): LocationProcessor class with Google Maps validation and filtering
 
-#### Notion Integration (`/notion_service/`)
+#### Notion Integration (`/notion_handler/`)
+
 - **Notion Client** (`notion_client.py`): Direct Notion API integration with custom database schema support
 - **Database Entry Creation**: Automated creation of location entries in Notion databases
 - **Hyperlinked Addresses**: Address fields automatically link to Google Maps for one-click navigation
@@ -34,12 +38,14 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 - **Today's URL Processing**: Query and process all URLs added to source database today
 
 #### Root Integration (`/main.py`)
+
 - **Complete Pipeline**: Connects video processing → location extraction → Notion database creation
 - **Flexible Modes**: Video-only, location-only, or full pipeline processing
 - **Notion Integration**: Optional automatic database entry creation with `--create-notion-entry`
 - **Clean Output**: Organized results with progress indicators and summaries
 
 #### Key Features
+
 - ✅ Smart download detection (skips if video/metadata already exists)
 - ✅ Multiple Whisper model sizes (tiny/base/small for memory optimization)
 - ✅ Gemini AI integration for intelligent location extraction
@@ -61,7 +67,9 @@ Complete TikTok Video Processing and Location Extraction Pipeline:
 - ✅ **Edge case handling** - Improved robustness for various content types
 
 ### Dependencies
+
 See `requirements.txt` for full list. Key dependencies:
+
 - `pyktok` - TikTok video downloading
 - `openai-whisper` - Audio transcription
 - `opencv-python` - Video frame processing
@@ -74,6 +82,7 @@ See `requirements.txt` for full list. Key dependencies:
 - `pytest` - Testing framework for unit and integration tests
 
 ### Environment Variables Required
+
 - `VISION_API_KEY` - Google Vision API key for OCR
 - `GEMINI_API_KEY` - Google Gemini API key for location extraction
 - `GOOGLE_MAPS_API_KEY` - Google Maps API key for Places data and Maps links
@@ -117,6 +126,7 @@ pytest tests/unit/test_location_models.py
 ## Usage
 
 ### Complete Pipeline (Recommended)
+
 ```bash
 # Process TikTok video and extract location info in one command
 python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --category restaurant chinese
@@ -130,6 +140,7 @@ python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --create-notion-entry
 ```
 
 ### Automated Daily Processing
+
 ```bash
 # Process all URLs added to source database today and create place entries
 python main.py --process-todays-urls --source-database-id SOURCE_DB_ID --places-database-id PLACES_DB_ID
@@ -148,6 +159,7 @@ python main.py --process-todays-urls
 ```
 
 ### Notion Database Integration
+
 ```bash
 # Create database entries from existing location file
 python test.py  # Uses environment variables for API keys and database ID
@@ -157,6 +169,7 @@ python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --location-only --cre
 ```
 
 ### Individual Components
+
 ```bash
 # Video processing only
 python main.py --url "https://www.tiktok.com/t/ZP8rwYBo3/" --video-only
@@ -170,7 +183,9 @@ python -m location_processor.main --video-id ZP8rwYBo3 --category restaurant chi
 ```
 
 ### Output Files
+
 All results are saved to the `results/` directory:
+
 - `{video_id}_results.json` - Video processing results (transcription + OCR)
 - `{video_id}_metadata.csv` - TikTok metadata
 - `{video_id}_location.json` - Structured location data for Notion
@@ -178,18 +193,22 @@ All results are saved to the `results/` directory:
 ## Notion Integration Setup
 
 ### 1. Create Notion Integration
+
 1. Go to https://www.notion.so/my-integrations
 2. Create a new integration and get your API key
 3. Add the integration to your database/page
 4. Set `NOTION_API_KEY` in your `.env` file
 
 ### 2. Get Page ID
+
 - Open your Notion page in browser
 - Copy the page ID from URL: `https://notion.so/[workspace]/[PAGE_ID]?...`
 - Use this PAGE_ID in the commands
 
 ### 3. Webhook Setup (Optional)
+
 For automated processing, you can set up webhooks:
+
 - Use the `webhook_handler.py` to process incoming requests
 - Deploy as a web service (FastAPI, Flask, etc.)
 - Configure Notion to send webhooks to your endpoint
@@ -197,6 +216,7 @@ For automated processing, you can set up webhooks:
 ## Next Steps (Optional Future Enhancements)
 
 ### Potential Backend Integration
+
 - [ ] RESTful API endpoints with FastAPI
 - [ ] Web interface for manual processing
 - [ ] Database storage for processed results
@@ -204,12 +224,14 @@ For automated processing, you can set up webhooks:
 - [ ] Advanced webhook validation and security
 
 ### Framework Options for API
+
 - FastAPI for Python web API
 - Node.js/Express for webhook handling
 
 ## Architecture Flow
 
 ### Single URL Processing
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   TikTok URL    │───▶│  utils/          │───▶│  Video          │───▶│  Location       │
@@ -268,16 +290,17 @@ For automated processing, you can set up webhooks:
                                                                                 │
                                                                                 ▼
                                                                        ┌─────────────────┐
-                                                                       │ notion_service/ │
+                                                                       │ notion_handler/ │
                                                                        │ notion_client   │
                                                                        │ (Hyperlinked)   │
                                                                        └─────────────────┘
 ```
 
 ### Automated Daily Processing
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ Notion Source   │───▶│  notion_service/ │───▶│   For Each URL  │
+│ Notion Source   │───▶│  notion_handler/ │───▶│   For Each URL  │
 │   Database      │    │  notion_client   │    │  Run Pipeline   │
 │ (Today's URLs)  │    │ get_todays_urls  │    │     Above       │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
@@ -298,31 +321,31 @@ For automated processing, you can set up webhooks:
 wandr-backend/
 ├── main.py                    # 🎯 Root pipeline orchestrator with batch processing
 ├── video_processor/           # 📹 Video processing package
-│   ├── __init__.py           
+│   ├── __init__.py
 │   ├── main.py               # TikTokProcessor class
 │   ├── video_downloader.py   # TikTok video downloading (with carousel support)
 │   ├── audio_transcriptor.py # Audio transcription
 │   └── video_frame_ocr.py    # Frame OCR processing (enhanced)
 ├── location_processor/        # 📍 Location extraction package
-│   ├── __init__.py           
+│   ├── __init__.py
 │   ├── main.py               # LocationProcessor class (improved logging)
 │   ├── location_analyzer.py  # Gemini AI location analysis
 │   └── google_places.py      # Google Places API integration
-├── notion_service/            # 🔗 Notion API integration package
-│   ├── __init__.py           
+├── notion_handler/            # 🔗 Notion API integration package
+│   ├── __init__.py
 │   ├── notion_client.py      # Direct Notion API client with batch processing
 ├── models/                    # 📋 Data models and schemas
-│   ├── __init__.py           
+│   ├── __init__.py
 │   ├── location_models.py    # PlaceInfo and LocationInfo data classes
 │   ├── url_models.py         # URL parsing data structures
 │   └── my_link.py            # Link processing utilities
 ├── utils/                     # 🛠️ Utility modules
-│   ├── __init__.py           
+│   ├── __init__.py
 │   ├── url_parser.py         # TikTok URL parsing and filename generation
 │   ├── logger.py             # Logging configuration
 │   └── image_utils.py        # Image processing utilities
 ├── tests/                     # 🧪 Testing framework
-│   ├── __init__.py           
+│   ├── __init__.py
 │   ├── conftest.py           # Pytest configuration
 │   ├── unit/                 # Unit tests
 │   │   ├── __init__.py
@@ -350,6 +373,7 @@ wandr-backend/
 ## JSON Output Schema
 
 ### Location JSON Output
+
 ```json
 {
   "url": "https://www.tiktok.com/t/ZP8rwYBo3/",
@@ -372,9 +396,11 @@ wandr-backend/
 ```
 
 ### Notion Database Schema
+
 The system creates entries with these fields:
+
 - **Name of Place** (Title) - Restaurant/business name
-- **Source URL** (URL) - Original TikTok video URL  
+- **Source URL** (URL) - Original TikTok video URL
 - **Address** (Rich Text) - Automatically hyperlinked to Google Maps for one-click navigation
 - **Categories** (Multi-select) - Place categories/tags
 - **Recommendations** (Rich Text) - Menu items or recommendations

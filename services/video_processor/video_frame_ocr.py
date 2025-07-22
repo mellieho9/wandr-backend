@@ -3,12 +3,9 @@ import requests
 import json
 import os
 import logging
-from dotenv import load_dotenv
 
 from utils import ProcessingLogger, ImageUtils, APIRateLimiter, OCRConfig
 
-# Load environment variables from .env file
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 class VideoFrameOCR:

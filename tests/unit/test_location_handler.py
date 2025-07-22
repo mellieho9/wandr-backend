@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock
-from notion_service.location_handler import LocationHandler
+from notion_handlern_service.location_handler import LocationHandler
 
 
 class TestLocationHandler:

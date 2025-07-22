@@ -132,48 +132,4 @@ class LocationProcessor:
             json.dump(location_info.to_dict(), f, indent=2, ensure_ascii=False)
         logger.info(f"Location info saved to: {output_file}")
 
-def main():
-    """Command line interface"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Extract location info from video results")
-    parser.add_argument("--video-id", required=True, help="Video ID to process")
-    parser.add_argument("--results-dir", default="results", help="Results directory")
-    parser.add_argument("--output", help="Output JSON file")
-    parser.add_argument("--category", nargs="*", help="Place categories (e.g., restaurant chinese)")
-    
-    args = parser.parse_args()
-    
-    processor = LocationProcessor()
-    
-    try:
-        location_info = processor.process_video_results(args.video_id, args.results_dir, args.category)
-        
-        # Print results
-        logger.info(f"EXTRACTED LOCATION INFO:")
-        logger.info(f"URL: {location_info.url}")
-        logger.info(f"Content Type: {location_info.content_type}")
-        logger.info(f"Total Places: {len(location_info.places)}")
-        for i, place in enumerate(location_info.places):
-            logger.info(f"  {i+1}. {place.name} ({'visited' if place.visited else 'not visited'})")
-            if place.address:
-                logger.info(f"     {place.address}")
-            if place.recommendations:
-                logger.info(f"     {place.recommendations[:50]}...")
-        
-        # Save to file
-        if args.output:
-            output_file = args.output
-        else:
-            output_file = f"{args.results_dir}/{args.video_id}_location.json"
-        
-        processor.save_location_info(location_info, output_file)
-        
-    except Exception as e:
-        logger.error(e)
-        return 1
-    
-    return 0
-
-if __name__ == "__main__":
-    exit(main())
+# Removed redundant CLI - use main.py instead

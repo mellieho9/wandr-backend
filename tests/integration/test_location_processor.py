@@ -2,7 +2,7 @@ import pytest
 import json
 import os
 from unittest.mock import Mock, patch
-from location_processor import LocationProcessor
+from services.location_processor import LocationProcessor
 from models.location_models import LocationInfo, PlaceInfo
 
 

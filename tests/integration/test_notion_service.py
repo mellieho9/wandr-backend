@@ -2,9 +2,9 @@ import pytest
 import json
 import os
 from unittest.mock import Mock, patch, MagicMock
-from notion_service.notion_client import NotionClient
-from notion_service.location_handler import LocationHandler
-from notion_service.url_processor import URLProcessor
+from notion_handlern_service.notion_client import NotionClient
+from notion_handlern_service.location_handler import LocationHandler
+from notion_handlern_service.url_processor import URLProcessor
 
 
 class TestNotionServiceIntegration:
@@ -12,7 +12,7 @@ class TestNotionServiceIntegration:
     @pytest.mark.integration
     def test_notion_client_with_location_handler_integration(self):
         """Test NotionClient and LocationHandler working together"""
-        with patch('notion_service.notion_client.Client') as mock_client_class:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.pages.create.return_value = {"id": "page_123", "url": "https://notion.so/page_123"}
@@ -46,7 +46,7 @@ class TestNotionServiceIntegration:
     @pytest.mark.integration
     def test_notion_client_with_url_processor_integration(self):
         """Test NotionClient and URLProcessor working together"""
-        with patch('notion_service.notion_client.Client') as mock_client_class:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             
@@ -90,7 +90,7 @@ class TestNotionServiceIntegration:
         # Mock the pipeline to succeed
         mock_pipeline.return_value = True
         
-        with patch('notion_service.notion_client.Client') as mock_client_class:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             

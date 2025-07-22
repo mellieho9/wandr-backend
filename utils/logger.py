@@ -81,10 +81,12 @@ class ProcessingLogger:
         logger.info(f"Text sources: {text_sources_count}")
     
     @staticmethod
-    def log_text_preview(combined_text: str, max_length: int = 200):
+    def log_text_preview(combined_text: str, max_length: int = None):
         """Log preview of combined text"""
         if combined_text:
-            preview = combined_text[:max_length]
+            from constants import MAX_TEXT_PREVIEW_LENGTH
+            max_len = max_length or MAX_TEXT_PREVIEW_LENGTH
+            preview = combined_text[:max_len]
             logger.info(f"Combined text preview: {preview}...")
     
     @staticmethod

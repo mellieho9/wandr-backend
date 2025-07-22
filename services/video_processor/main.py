@@ -7,20 +7,28 @@ Supports both video and carousel content with edge case handling
 import os
 import json
 from pathlib import Path
-from dotenv import load_dotenv
 
 from .video_downloader import TikTokDownloader
 from .audio_transcriptor import AudioTranscriptor
 from .video_frame_ocr import VideoFrameOCR
 from utils import TikTokURLParser, ProcessingLogger
 
-load_dotenv()
-
 class TikTokProcessor:
-    def __init__(self, vision_api_key=None, whisper_model="tiny"):
+    def __init__(self, vision_api_key=None, whisper_model="tiny", frame_interval=3.0, max_frames=8):
+        """
+        Initialize TikTok processor with configurable options.
+        
+        Args:
+            vision_api_key: Google Vision API key for OCR
+            whisper_model: Whisper model size for transcription
+            frame_interval: Seconds between frame extractions
+            max_frames: Maximum frames to extract for OCR
+        """
         self.downloader = TikTokDownloader()
         self.transcriptor = AudioTranscriptor(model_size=whisper_model)
         self.ocr_processor = VideoFrameOCR(vision_api_key) if vision_api_key else None
+        self.frame_interval = frame_interval
+        self.max_frames = max_frames
         ProcessingLogger.log_initialization("TikTok processor")
 
     def process_url(self, url, output_dir="results", category="tiktok"):
@@ -154,7 +162,11 @@ class TikTokProcessor:
         if self.ocr_processor:
             ProcessingLogger.log_frame_extraction_start()
             try:
-                ocr_results = self.ocr_processor.extract_frames_and_ocr(video_path, frame_interval=3.0, max_frames=8)
+                ocr_results = self.ocr_processor.extract_frames_and_ocr(
+                    video_path, 
+                    frame_interval=self.frame_interval, 
+                    max_frames=self.max_frames
+                )
                 text_frames = [r for r in ocr_results if r.get('text')]
                 results['ocr'] = {
                     'frames_with_text': len(text_frames),
@@ -199,13 +211,6 @@ class TikTokProcessor:
 
         ProcessingLogger.log_results_saved(results_file)
 
-    def process_video(self, video_path, original_url=None):
-        """Legacy method for backward compatibility - processes existing video file"""
-        download_result = {
-            'success': True,
-            'content_type': 'video',
-            'video_files': [video_path]
-        }
-        return self._process_video(download_result, original_url)
+# Removed legacy process_video method - use process_url instead
 
 

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from notion_service.notion_client import NotionClient
+from notion_handlern_service.notion_client import NotionClient
 
 
 class TestNotionClient:
@@ -10,7 +10,7 @@ class TestNotionClient:
         """Test NotionClient initialization with provided API key"""
         api_key = "test_api_key"
         
-        with patch('notion_service.notion_client.Client') as mock_client:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client:
             client = NotionClient(api_key)
             
             assert client.api_key == api_key
@@ -19,10 +19,10 @@ class TestNotionClient:
     @pytest.mark.unit
     def test_notion_client_initialization_from_config(self):
         """Test NotionClient initialization using config"""
-        with patch('notion_service.notion_client.config') as mock_config:
+        with patch('notion_handlern_service.notion_client.config') as mock_config:
             mock_config.get_notion_api_key.return_value = "config_api_key"
             
-            with patch('notion_service.notion_client.Client') as mock_client:
+            with patch('notion_handlern_service.notion_client.Client') as mock_client:
                 client = NotionClient()
                 
                 assert client.api_key == "config_api_key"
@@ -31,7 +31,7 @@ class TestNotionClient:
     @pytest.mark.unit
     def test_notion_client_initialization_no_api_key(self):
         """Test NotionClient initialization fails without API key"""
-        with patch('notion_service.notion_client.config') as mock_config:
+        with patch('notion_handlern_service.notion_client.config') as mock_config:
             mock_config.get_notion_api_key.return_value = None
             
             with pytest.raises(ValueError, match="NOTION_API_KEY environment variable is required"):
@@ -44,7 +44,7 @@ class TestNotionClient:
         database_id = "test_db_id"
         properties = {"title": {"title": [{"text": {"content": "Test"}}]}}
         
-        with patch('notion_service.notion_client.Client') as mock_client_class:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.pages.create.return_value = {"id": "page_123"}
@@ -65,7 +65,7 @@ class TestNotionClient:
         page_id = "page_123"
         properties = {"status": {"select": {"name": "Completed"}}}
         
-        with patch('notion_service.notion_client.Client') as mock_client_class:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.pages.update.return_value = {"id": "page_123"}
@@ -86,7 +86,7 @@ class TestNotionClient:
         database_id = "test_db_id"
         filter_conditions = {"property": "Status", "select": {"equals": "Pending"}}
         
-        with patch('notion_service.notion_client.Client') as mock_client_class:
+        with patch('notion_handlern_service.notion_client.Client') as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_client.databases.query.return_value = {"results": [{"id": "page_1"}]}
@@ -108,8 +108,8 @@ class TestNotionClient:
         database_id = "test_db_id"
         location_data = {"name of place": "Test Restaurant"}
         
-        with patch('notion_service.notion_client.Client'):
-            with patch('notion_service.location_handler.LocationHandler') as mock_handler_class:
+        with patch('notion_handlern_service.notion_client.Client'):
+            with patch('notion_handlern_service.location_handler.LocationHandler') as mock_handler_class:
                 mock_handler = Mock()
                 mock_handler_class.return_value = mock_handler
                 mock_handler.create_location_entry.return_value = {"id": "page_123"}
@@ -127,8 +127,8 @@ class TestNotionClient:
         api_key = "test_api_key"
         database_id = "test_db_id"
         
-        with patch('notion_service.notion_client.Client'):
-            with patch('notion_service.url_processor.URLProcessor') as mock_processor_class:
+        with patch('notion_handlern_service.notion_client.Client'):
+            with patch('notion_handlern_service.url_processor.URLProcessor') as mock_processor_class:
                 mock_processor = Mock()
                 mock_processor_class.return_value = mock_processor
                 mock_processor.get_pending_urls.return_value = [{"url": "test_url", "page_id": "page_123"}]
@@ -147,8 +147,8 @@ class TestNotionClient:
         page_id = "page_123"
         status = "Completed"
         
-        with patch('notion_service.notion_client.Client'):
-            with patch('notion_service.url_processor.URLProcessor') as mock_processor_class:
+        with patch('notion_handlern_service.notion_client.Client'):
+            with patch('notion_handlern_service.url_processor.URLProcessor') as mock_processor_class:
                 mock_processor = Mock()
                 mock_processor_class.return_value = mock_processor
                 mock_processor.update_entry_status.return_value = True
@@ -167,8 +167,8 @@ class TestNotionClient:
         source_db_id = "source_db"
         places_db_id = "places_db"
         
-        with patch('notion_service.notion_client.Client'):
-            with patch('notion_service.url_processor.URLProcessor') as mock_processor_class:
+        with patch('notion_handlern_service.notion_client.Client'):
+            with patch('notion_handlern_service.url_processor.URLProcessor') as mock_processor_class:
                 mock_processor = Mock()
                 mock_processor_class.return_value = mock_processor
                 mock_processor.process_pending_urls.return_value = {"processed": 1, "successful": 1, "failed": 0}
