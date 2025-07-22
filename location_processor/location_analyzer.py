@@ -7,12 +7,10 @@ Uses Gemini API to extract location information from video content.
 
 import json
 import logging
-import os
 from typing import Dict
 import google.generativeai as genai
-from dotenv import load_dotenv
 
-load_dotenv()
+from config import config
 logger = logging.getLogger(__name__)
 
 class LocationAnalyzer:
@@ -20,7 +18,7 @@ class LocationAnalyzer:
 
     def __init__(self, api_key: str = None):
         """Initialize with Gemini API key"""
-        self.api_key = api_key or os.getenv('GEMINI_API_KEY')
+        self.api_key = api_key or config.get_gemini_api_key()
 
         if self.api_key:
             genai.configure(api_key=self.api_key)

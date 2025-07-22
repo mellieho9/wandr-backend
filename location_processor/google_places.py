@@ -6,12 +6,10 @@ Handles Google Maps Places API integration for location lookup and enhancement.
 """
 
 import logging
-import os
 from typing import Dict, Optional
 import googlemaps
-from dotenv import load_dotenv
 
-load_dotenv()
+from config import config
 logger = logging.getLogger(__name__)
 
 class GooglePlacesService:
@@ -19,7 +17,7 @@ class GooglePlacesService:
     
     def __init__(self, api_key: str = None):
         """Initialize with Google Maps API key"""
-        self.api_key = api_key or os.getenv('GOOGLE_MAPS_API_KEY')
+        self.api_key = api_key or config.get_google_maps_api_key()
         
         if self.api_key:
             self.client = googlemaps.Client(key=self.api_key)

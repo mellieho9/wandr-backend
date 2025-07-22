@@ -231,7 +231,9 @@ class VideoFrameOCR:
 
 # Example usage and testing
 if __name__ == "__main__":
-    api_key = os.getenv("VISION_API_KEY")
+    from config import config
+    
+    api_key = config.get_vision_api_key()
     if not api_key:
         logger.error("VISION_API_KEY not found in environment variables")
         logger.error("Please set it in your .env file")
