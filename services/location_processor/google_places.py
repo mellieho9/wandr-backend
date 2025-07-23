@@ -5,12 +5,13 @@ Google Places Service
 Handles Google Maps Places API integration for location lookup and enhancement.
 """
 
-import logging
 from typing import Dict, Optional
 import googlemaps
 
 from utils.config import config
-logger = logging.getLogger(__name__)
+from utils.logging_config import setup_logging, log_success
+
+logger = setup_logging(logger_name=__name__)
 
 class GooglePlacesService:
     """Google Places API integration for location enhancement"""
@@ -141,7 +142,7 @@ class GooglePlacesService:
             if place_id:
                 result['maps_link'] = self.generate_maps_link(place_id=place_id)
                 result['has_valid_location'] = True
-                logger.info(f"Google Places enhancement completed for: {place_name}")
+                log_success(logger, f"Google Places enhancement completed for: {place_name}")
             elif formatted_address:
                 result['maps_link'] = self.generate_maps_link(address=formatted_address)
                 result['has_valid_location'] = True

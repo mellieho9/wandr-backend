@@ -2,7 +2,6 @@
 Command pattern implementation for pipeline operations
 """
 
-import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
@@ -18,8 +17,9 @@ from models.pipeline_models import (
 )
 from utils.exceptions import VideoProcessingError, LocationExtractionError, NotionIntegrationError
 from utils.url_parser import TikTokURLParser
+from utils.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 
 class Command(ABC):

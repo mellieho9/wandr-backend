@@ -1,10 +1,11 @@
-import logging
 import os
 import whisper
 import torch
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+from utils.logging_config import setup_logging, log_success
+
+logger = setup_logging(logger_name=__name__)
 
 class AudioTranscriptor:
     """
@@ -33,7 +34,7 @@ class AudioTranscriptor:
         
         try:
             self.model = whisper.load_model(model_size, device=device)
-            logger.info(f"Whisper model '{model_size}' loaded successfully")
+            log_success(logger, f"Whisper model '{model_size}' loaded")
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
@@ -68,7 +69,7 @@ class AudioTranscriptor:
                 verbose=False  # Set to True for progress updates
             )
             
-            logger.info("Transcription completed")
+            log_success(logger, "Transcription completed")
             
             # Return comprehensive results
             return {

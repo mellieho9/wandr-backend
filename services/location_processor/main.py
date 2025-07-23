@@ -6,7 +6,6 @@ Main processor that combines location analysis and Google Places services.
 """
 
 import json
-import logging
 import os
 import pandas as pd
 from typing import Dict
@@ -14,8 +13,9 @@ from typing import Dict
 from .location_analyzer import LocationAnalyzer
 from .google_places import GooglePlacesService
 from models.location_models import LocationInfo, PlaceInfo
+from utils.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 class LocationProcessor:
     """Main processor combining location analysis and Google Places services"""

@@ -16,7 +16,7 @@ from pipeline.orchestrator import PipelineOrchestrator
 from utils.exceptions import ConfigurationError, WandrError
 
 # Setup logging
-setup_logging(level="INFO", log_file="wandr-backend.log", console_output=True)
+logger = setup_logging(level="INFO", log_file="wandr-backend.log", console_output=True, logger_name=__name__)
 
 
 def main():
@@ -119,16 +119,16 @@ def main():
             return 0
         
     except ConfigurationError as e:
-        print(f"Configuration error: {e}", file=sys.stderr)
+        logger.error(f"Configuration error: {e}")
         return 1
     except WandrError as e:
-        print(f"Processing error: {e}", file=sys.stderr)
+        logger.error(f"Processing error: {e}")
         return 1
     except KeyboardInterrupt:
-        print("Process interrupted by user", file=sys.stderr)
+        logger.info("Process interrupted by user")
         return 1
     except Exception as e:
-        print(f"Unexpected error: {e}", file=sys.stderr)
+        logger.error(f"Unexpected error: {e}")
         return 1
 
 

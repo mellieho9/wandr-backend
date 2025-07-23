@@ -2,11 +2,11 @@ import cv2
 import requests
 import json
 import os
-import logging
 
 from utils import ProcessingLogger, ImageUtils, APIRateLimiter, OCRConfig
+from utils.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 class VideoFrameOCR:
     """

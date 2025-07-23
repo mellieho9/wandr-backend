@@ -6,12 +6,13 @@ Uses Gemini API to extract location information from video content.
 """
 
 import json
-import logging
 from typing import Dict
 import google.generativeai as genai
 
 from utils.config import config
-logger = logging.getLogger(__name__)
+from utils.logging_config import setup_logging, log_success
+
+logger = setup_logging(logger_name=__name__)
 
 class LocationAnalyzer:
     """Enhanced location analyzer with comprehensive edge case handling using Gemini API"""
@@ -108,7 +109,7 @@ Extract information in this EXACT JSON format:
                 response_text = response_text.split('```')[1].split('```')[0]
 
             extracted_data = json.loads(response_text)
-            logger.info("Enhanced Gemini extraction completed ", extracted_data)
+            log_success(logger, f"Enhanced Gemini extraction completed: {extracted_data.get('content_type', 'unknown type')}")
             return extracted_data
 
         except (json.JSONDecodeError, ValueError, KeyError) as ex:

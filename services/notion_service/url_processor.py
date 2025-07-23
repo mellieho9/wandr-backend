@@ -5,11 +5,12 @@ This module handles URL processing operations for Notion databases,
 including querying for pending URLs and batch processing.
 """
 
-import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 
-logger = logging.getLogger(__name__)
+from utils.logging_config import setup_logging
+
+logger = setup_logging(logger_name=__name__)
 
 
 class URLProcessor:

@@ -2,11 +2,11 @@
 Transform location data between different formats
 """
 
-import logging
 from typing import Dict, Any, List
 from models.location_models import PlaceInfo
+from utils.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 
 class LocationToNotionTransformer:

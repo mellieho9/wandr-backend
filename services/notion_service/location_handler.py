@@ -5,10 +5,11 @@ This module handles location-specific operations for Notion databases,
 including formatting location data and creating location entries.
 """
 
-import logging
 from typing import Dict, Any
 
-logger = logging.getLogger(__name__)
+from utils.logging_config import setup_logging
+
+logger = setup_logging(logger_name=__name__)
 
 
 class LocationHandler:

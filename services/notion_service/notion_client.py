@@ -5,14 +5,14 @@ This module provides functionality to interact with Notion databases,
 including creating new entries and updating existing pages.
 """
 
-import logging
 from typing import Dict, Any, Optional, List
 from notion_client import Client
 from notion_client.errors import APIResponseError
 
 from utils.config import config
+from utils.logging_config import setup_logging, log_success
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 
 class NotionClient:
@@ -30,7 +30,7 @@ class NotionClient:
             raise ValueError("NOTION_API_KEY environment variable is required")
         
         self.client = Client(auth=self.api_key)
-        logger.info("Notion client initialized successfully")
+        log_success(logger, "Notion client initialized")
     
     def create_database_entry(self, database_id: str, properties: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -54,7 +54,7 @@ class NotionClient:
                 properties=properties
             )
             
-            logger.info(f"Successfully created database entry with ID: {response['id']}")
+            log_success(logger, f"Created database entry with ID: {response['id']}")
             return response
             
         except APIResponseError as e:
@@ -80,7 +80,7 @@ class NotionClient:
                 properties=properties
             )
             
-            logger.info(f"Successfully updated page {page_id}")
+            log_success(logger, f"Updated page {page_id}")
             return response
             
         except APIResponseError as e:
@@ -120,7 +120,7 @@ class NotionClient:
             
             response = self.client.databases.query(**query_params)
             
-            logger.info(f"Successfully queried database {database_id}, got {len(response['results'])} results")
+            log_success(logger, f"Queried database {database_id}, got {len(response['results'])} results")
             return response
             
         except APIResponseError as e:

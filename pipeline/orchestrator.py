@@ -2,7 +2,6 @@
 Pipeline orchestrator for coordinating processing operations
 """
 
-import logging
 from typing import Dict
 from utils.constants import MAX_RECOMMENDATION_PREVIEW_LENGTH
 from utils.config import config
@@ -11,10 +10,10 @@ from models.pipeline_models import (
 )
 from utils.exceptions import ConfigurationError, WandrError
 from services.notion_service.notion_client import NotionClient
-from utils.logging_config import LoggerMixin
+from utils.logging_config import LoggerMixin, setup_logging, log_success
 from .commands import ProcessVideoCommand, ExtractLocationCommand, CreateNotionEntryCommand
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 
 class PipelineOrchestrator(LoggerMixin):
@@ -86,7 +85,7 @@ class PipelineOrchestrator(LoggerMixin):
             # Log summary
             self._log_pipeline_summary(results)
             
-            self.logger.info("Pipeline completed successfully!")
+            log_success(self.logger, "Pipeline completed!")
             return results
             
         except Exception as e:
@@ -180,14 +179,14 @@ class PipelineOrchestrator(LoggerMixin):
                         # Update status to 'Completed'
                         notion_client.update_entry_status(page_id, "Completed")
                         results["successful"] += 1
-                        self.logger.info(f"✅ Successfully processed: {url}")
+                        log_success(self.logger, f"Successfully processed: {url}")
                     else:
                         # Update status to 'Failed'
                         notion_client.update_entry_status(page_id, "Failed")
                         results["failed"] += 1
                         error_msg = f"Processing failed for: {url}"
                         results["errors"].append(error_msg)
-                        self.logger.error(f"❌ {error_msg}")
+                        self.logger.error(f"{error_msg}")
                         
                 except Exception as e:
                     # Update status to 'Failed' on exception
@@ -195,7 +194,7 @@ class PipelineOrchestrator(LoggerMixin):
                     results["failed"] += 1
                     error_msg = f"Error processing {url}: {str(e)}"
                     results["errors"].append(error_msg)
-                    self.logger.error(f"❌ {error_msg}")
+                    self.logger.error(f"{error_msg}")
             
             # Convert to our result format
             batch_result = BatchProcessingResult(
@@ -208,9 +207,12 @@ class PipelineOrchestrator(LoggerMixin):
             # Log summary
             self.logger.info("Batch Processing Summary:")
             self.logger.info(f"  Total URLs processed: {batch_result.total_processed}")
-            self.logger.info(f"  Successful: {batch_result.successful}")
-            self.logger.info(f"  Failed: {batch_result.failed}")
-            self.logger.info(f"  Success rate: {batch_result.success_rate:.1f}%")
+            log_success(self.logger, f"Successful: {batch_result.successful}")
+            if batch_result.failed > 0:
+                self.logger.error(f"Failed: {batch_result.failed}")
+            else:
+                self.logger.info(f"Failed: {batch_result.failed}")
+            log_success(self.logger, f"Success rate: {batch_result.success_rate:.1f}%")
             
             if batch_result.errors:
                 self.logger.error("Errors encountered:")

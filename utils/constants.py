@@ -27,3 +27,14 @@ NOTION_API_TIMEOUT = 30
 
 # Whisper model sizes (ordered by quality/speed tradeoff)
 WHISPER_MODELS = ['tiny', 'base', 'small', 'medium', 'large']
+
+# ANSI color constants
+class Colors:
+    """ANSI color code constants for logging"""
+    CYAN = '\033[36m'      # Debug
+    WHITE = '\033[0m'      # Info/Default
+    YELLOW = '\033[33m'    # Warning
+    RED = '\033[31m'       # Error
+    MAGENTA = '\033[35m'   # Critical
+    GREEN = '\033[32m'     # Success
+    RESET = '\033[0m'      # Reset to default

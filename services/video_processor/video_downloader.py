@@ -1,5 +1,4 @@
 """TikTok video downloader with carousel support."""
-import logging
 import os
 import time
 from pathlib import Path
@@ -8,8 +7,9 @@ import pyktok as pyk
 import requests
 
 from utils import ProcessingLogger
+from utils.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging(logger_name=__name__)
 
 class TikTokDownloader:
     """TikTok video downloader using pyktok"""

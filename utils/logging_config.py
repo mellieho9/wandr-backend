@@ -8,13 +8,43 @@ from datetime import datetime
 from typing import Optional, List
 from pathlib import Path
 
+from utils.constants import Colors
+
 logger = logging.getLogger(__name__)
+
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter with colors for different log levels"""
+    
+    # Map log levels to colors
+    COLORS = {
+        'DEBUG': Colors.CYAN,
+        'INFO': Colors.WHITE,
+        'WARNING': Colors.YELLOW,
+        'ERROR': Colors.RED,
+        'CRITICAL': Colors.MAGENTA,
+        'SUCCESS': Colors.GREEN,
+    }
+    RESET = Colors.RESET
+    
+    def format(self, record):
+        # Get the color for this log level
+        color = self.COLORS.get(record.levelname, Colors.WHITE)
+        
+        # Format the message
+        formatted = super().format(record)
+        
+        # Add color to the entire line
+        if color != Colors.WHITE:
+            formatted = f"{color}{formatted}{Colors.RESET}"
+        
+        return formatted
 
 
 def setup_logging(
     level: str = "INFO",
     log_file: Optional[str] = "wandr-backend.log",
-    console_output: bool = True
+    console_output: bool = True,
+    logger_name: Optional[str] = None
 ) -> logging.Logger:
     """
     Configure structured logging for the application.
@@ -23,12 +53,17 @@ def setup_logging(
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Path to log file, None to disable file logging
         console_output: Whether to output to console
+        logger_name: Name for the logger (typically __name__)
         
     Returns:
-        Configured root logger
+        Configured logger for the module if logger_name provided, otherwise root logger
     """
-    # Create formatter
-    formatter = logging.Formatter(
+    # Create formatters
+    console_formatter = ColoredFormatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
@@ -40,34 +75,40 @@ def setup_logging(
     # Clear existing handlers
     root_logger.handlers.clear()
     
-    # Console handler
+    # Console handler with colors
     if console_output:
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
+        console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
     
-    # File handler
+    # File handler without colors
     if log_file:
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_path)
-        file_handler.setFormatter(formatter)
+        file_handler.setFormatter(file_formatter)
         root_logger.addHandler(file_handler)
     
+    # Return specific logger if name provided, otherwise root logger
+    if logger_name:
+        return logging.getLogger(logger_name)
     return root_logger
 
 
-def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger instance for a specific module.
-    
-    Args:
-        name: Logger name (typically __name__)
-        
-    Returns:
-        Logger instance
-    """
-    return logging.getLogger(name)
+def log_success(logger_instance, message: str):
+    """Log a success message with green color"""
+    # Create a custom log record with SUCCESS level
+    record = logging.LogRecord(
+        name=logger_instance.name,
+        level=25,  # Between INFO (20) and WARNING (30)
+        pathname="",
+        lineno=0,
+        msg=message,
+        args=(),
+        exc_info=None
+    )
+    record.levelname = "SUCCESS"
+    logger_instance.handle(record)
 
 
 class LoggerMixin:
@@ -137,7 +178,10 @@ class ProcessingLogger:
         """Log carousel processing summary"""
         logger.info("CAROUSEL RESULTS:")
         logger.info(f"Images: {image_count}")
-        logger.info(f"OCR: {'Success' if ocr_success else 'Failed'}")
+        if ocr_success:
+            log_success(logger, "OCR: Success")
+        else:
+            logger.error("OCR: Failed")
         if ocr_success and images_with_text > 0:
             logger.info(f"Images with text: {images_with_text}")
     
@@ -145,8 +189,14 @@ class ProcessingLogger:
     def log_video_summary(transcription_success: bool, ocr_success: bool, text_sources_count: int):
         """Log video processing summary"""
         logger.info("VIDEO RESULTS:")
-        logger.info(f"Audio: {'Success' if transcription_success else 'Failed'}")
-        logger.info(f"OCR: {'Success' if ocr_success else 'Failed'}")
+        if transcription_success:
+            log_success(logger, "Audio: Success")
+        else:
+            logger.error("Audio: Failed")
+        if ocr_success:
+            log_success(logger, "OCR: Success")
+        else:
+            logger.error("OCR: Failed")
         logger.info(f"Text sources: {text_sources_count}")
     
     @staticmethod
