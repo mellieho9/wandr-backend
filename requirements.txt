@@ -14,3 +14,7 @@ google-generativeai
 pytest
 pytest-mock
 notion-client
+flask
+gunicorn
+google-cloud-storage
+google-cloud-secret-manager

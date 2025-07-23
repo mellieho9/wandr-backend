@@ -52,6 +52,7 @@ Thumbs.db
 
 # Documentation
 README.md
+docs/
 *.md
 
 # Test files
@@ -60,11 +61,10 @@ tests/
 .coverage
 htmlcov/
 
-# Logs (keep directory structure but exclude log files)
+# Logs
 *.log
-logs/*.log
 
-# Downloaded content (should be ephemeral in containers)
+# Downloaded content (ephemeral)
 *.mp4
 *.mov
 *.avi
@@ -72,10 +72,10 @@ logs/*.log
 *.webm
 *_metadata.csv
 
-# Results (these will be generated)
-results/*.json
-results/*.csv
-
 # Development files
 .claude
 Makefile
+
+# Deployment files (don't copy into container)
+deploy.sh
+maintenance.sh

@@ -1,12 +1,13 @@
-# Use Python 3.11 with Ubuntu base for better package compatibility
+# Use Python 3.11 slim for better performance
 FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    PORT=8080
 
-# Install system dependencies needed for OpenCV, FFmpeg, and other packages
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     # OpenCV dependencies
     libglib2.0-0 \
@@ -14,7 +15,6 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
-    libglib2.0-0 \
     # FFmpeg for video processing
     ffmpeg \
     # Git for potential package installations
@@ -23,35 +23,54 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Create app directory
+# Create app directory and user
 WORKDIR /app
 
 # Create non-root user for security
-RUN useradd --create-home --shell /bin/bash app \
-    && chown -R app:app /app
-USER app
+RUN useradd --create-home --shell /bin/bash appuser \
+    && chown -R appuser:appuser /app
 
-# Copy requirements first for better Docker layer caching
-COPY --chown=app:app requirements.txt .
+# Copy requirements first for better caching
+COPY --chown=appuser:appuser requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Install Python dependencies as root, then switch to appuser
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Switch to non-root user
+USER appuser
 
 # Copy application code
-COPY --chown=app:app . .
+COPY --chown=appuser:appuser . .
 
-# Create results directory with proper permissions
-RUN mkdir -p results && chmod 755 results
-
-# Add user's local bin to PATH for installed packages
-ENV PATH="/home/app/.local/bin:$PATH"
+# Create results directory
+RUN mkdir -p results logs
 
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import sys; print('Health check passed'); sys.exit(0)"
+# Add a simple web server for Cloud Run health checks
+RUN echo 'from flask import Flask\n\
+app = Flask(__name__)\n\
+\n\
+@app.route("/")\n\
+def health():\n\
+    return {"status": "healthy", "service": "wandr-backend"}\n\
+\n\
+@app.route("/process", methods=["POST"])\n\
+def process():\n\
+    import subprocess\n\
+    result = subprocess.run(["python", "main.py", "--process-pending-urls"], capture_output=True, text=True)\n\
+    return {"success": result.returncode == 0, "output": result.stdout, "error": result.stderr}\n\
+\n\
+if __name__ == "__main__":\n\
+    import os\n\
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))' > app.py
 
-# Default command - can be overridden
-CMD ["python", "main.py", "--process-pending-urls"]
+# Add Flask to requirements if not present
+RUN pip install flask
+
+# Expose port
+EXPOSE 8080
+
+# Default command - web server for Cloud Run
+CMD ["python", "app.py", "--process-pending-urls"]
