@@ -56,6 +56,49 @@ pytest --cov=. tests/
 pytest tests/unit/test_location_models.py
 ```
 
+## Deployment
+
+### Google Cloud Platform Deployment
+
+The project includes automated deployment to Google Cloud Run with Cloud Scheduler for daily processing:
+
+```bash
+# 1. Set up your deployment configuration
+cp .env.example .env
+# Fill in all required values in .env file
+
+# 2. Make the deployment script executable
+chmod +x deploy.sh
+
+# 3. Deploy to Google Cloud
+./deploy.sh
+```
+
+#### Required Environment Variables for Deployment
+
+In addition to the API keys listed above, you'll need these deployment-specific variables:
+
+- `PROJECT_ID` - Your Google Cloud Project ID
+- `REGION` - Google Cloud region (e.g., us-central1)
+- `JOB_NAME` - Name for your Cloud Run job
+- `SCHEDULER_JOB_NAME` - Name for your Cloud Scheduler job
+- `SA_EMAIL` - Service account email for authentication
+- `BUCKET_NAME` - Google Cloud Storage bucket name
+- `IMAGE_NAME` - Docker image name (e.g., gcr.io/PROJECT_ID/wandr-processor)
+
+#### What the deployment includes:
+
+- **Cloud Run Job** - Containerized batch processing with 2GB memory, 2 CPU cores
+- **Cloud Scheduler** - Automatic daily execution at 8 AM UTC
+- **Secret Management** - API keys stored securely in Google Secret Manager
+- **Auto-scaling** - Handles variable workloads efficiently
+
+#### Manual execution:
+```bash
+# Execute the job manually
+gcloud run jobs execute $JOB_NAME --region=$REGION
+```
+
 ## Usage
 
 ### Complete Pipeline (Recommended)
