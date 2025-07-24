@@ -5,7 +5,8 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive \
-    PORT=8080
+    PORT=8080 \
+    DISPLAY=:99
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -19,6 +20,8 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     # Git for potential package installations
     git \
+    # Virtual display for headless browsers
+    xvfb \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
@@ -35,6 +38,10 @@ COPY --chown=appuser:appuser requirements.txt .
 
 # Install Python dependencies as root, then switch to appuser
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright browsers for pyktok
+RUN playwright install chromium
+RUN playwright install-deps
 
 # Switch to non-root user
 USER appuser
@@ -72,5 +79,5 @@ RUN pip install flask
 # Expose port
 EXPOSE 8080
 
-# Default command - web server for Cloud Run
-CMD ["python", "app.py", "--process-pending-urls"]
+# Default command - start virtual display and run application
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & python main.py --process-pending-urls"]

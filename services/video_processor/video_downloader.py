@@ -17,8 +17,12 @@ class TikTokDownloader:
     def __init__(self, browser='chrome'):
         """Initialize the downloader with specified browser"""
         self.browser = browser
-        pyk.specify_browser(browser)
-        ProcessingLogger.log_initialization(f"TikTok downloader with {browser}")
+        try:
+            pyk.specify_browser(browser)
+            ProcessingLogger.log_initialization(f"TikTok downloader with {browser}")
+        except Exception as e:
+            ProcessingLogger.log_initialization(f"TikTok downloader initialized without browser cookies: {e}")
+            # Continue without browser cookies - pyktok can still work
 
     def _get_content_type(self, url):
         """Detect content type from TikTok URL"""

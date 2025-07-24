@@ -22,7 +22,7 @@ class Config:
     GOOGLE_MAPS_API_KEY: Optional[str] = os.getenv("GOOGLE_MAPS_API_KEY")
     
     # Notion Configuration
-    NOTION_API_KEY: Optional[str] = os.getenv("NOTION_API_KEY") or os.getenv("NOTION_TOKEN")
+    NOTION_API_KEY: Optional[str] = os.getenv("NOTION_API_KEY") or os.getenv("NOTION_API_KEY")
     NOTION_PLACES_DB_ID: Optional[str] = os.getenv("NOTION_PLACES_DB_ID")
     NOTION_SOURCE_DB_ID: Optional[str] = os.getenv("NOTION_SOURCE_DB_ID")
     
@@ -43,7 +43,7 @@ class Config:
     
     @classmethod
     def get_notion_api_key(cls) -> Optional[str]:
-        """Get Notion API key (checks both NOTION_API_KEY and NOTION_TOKEN)."""
+        """Get Notion API key (checks both NOTION_API_KEY and NOTION_API_KEY)."""
         return cls.NOTION_API_KEY
     
     @classmethod

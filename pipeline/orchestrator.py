@@ -2,6 +2,7 @@
 Pipeline orchestrator for coordinating processing operations
 """
 
+import traceback
 from typing import Dict
 from utils.constants import MAX_RECOMMENDATION_PREVIEW_LENGTH
 from utils.config import config
@@ -91,6 +92,7 @@ class PipelineOrchestrator(LoggerMixin):
         except Exception as e:
             error_msg = f"Pipeline execution failed: {str(e)}"
             self.logger.error(error_msg)
+            self.logger.error(f"Full traceback: {traceback.format_exc()}")
             
             # Add error result if not already present
             if 'error' not in results:
