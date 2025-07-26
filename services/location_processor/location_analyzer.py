@@ -52,8 +52,16 @@ Analyze this TikTok video content and extract comprehensive location information
 2. **Multiple Places**: Area guides or videos featuring multiple locations
 3. **Popup Events**: Temporary events, markets, or limited-time restaurants
 4. **Carousel Content**: Multiple images with different text/locations per image
+5. **Market Vendors**: Individual vendors/stalls within food courts, farmer's markets, flea markets, night markets
+6. **Non-English Names**: Places with Chinese, Korean, Japanese, or other non-English names
 
 {context}
+
+**IMPORTANT**: Pay special attention to:
+- Chinese characters or non-English place names (e.g., 满小满, 老友记, etc.)
+- Market references ("inside [mall name] food court", "stall in", "vendor at", "farmer's market", "flea market", "night market")
+- Address information mentioned in hashtags or location descriptions
+- Mall, plaza, or market names that contain the individual vendors
 
 Extract information in this EXACT JSON format:
 {{
@@ -71,7 +79,6 @@ Extract information in this EXACT JSON format:
             "recommendations": "Specific menu items or recommendations",
             "hours": "Opening hours or schedule",
             "website": "Website URL if mentioned",
-            "is_primary": true,
             "is_popup": false,
             "popup_details": {{
                 "duration": "how long the popup runs",
@@ -88,14 +95,20 @@ Extract information in this EXACT JSON format:
 }}
 
 **CRITICAL INSTRUCTIONS**:
-- For single place videos: Return 1 place with is_primary=true
-- For multiple places: Return multiple places, mark the main one as is_primary=true
 - For popups: Set is_popup=true and fill popup_details
 - For area guides: Set content_type="area_guide" and fill area_info
 - If no clear location info: Return empty places array
 - Use exact JSON format - no extra text or explanations
 - Extract specific menu items, not generic descriptions
 - Look for temporal indicators like "this weekend", "popup", "limited time"
+- DO NOT return generic names like "unnamed", "unknown", "restaurant", "cafe", "store", "business", etc.
+- Only return specific, identifiable business names with actual place names
+- If only generic descriptions are available, return empty places array
+- ALWAYS extract Chinese/non-English place names - they are valid specific business names
+- For market vendors WITH specific names: Use the actual vendor name and include market address
+- For market vendors WITHOUT specific names: Format as directional location (e.g., "Corner Stall at Golden Mall Food Court", "Stand 5 at Union Square Farmer's Market", "Booth A12 at Brooklyn Flea")
+- When market/mall address is mentioned, use that as the address for individual vendors
+- Look for location clues in hashtags, descriptions, and 📍 location pins
 """
 
         try:

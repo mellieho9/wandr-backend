@@ -220,30 +220,40 @@ class CreateNotionEntryCommand(Command):
             logger.info(f"Creating {len(location_info.places)} Notion entries...")
             
             created_page_ids = []
+            duplicate_count = 0
             
             for i, place in enumerate(location_info.places, 1):
                 try:
                     # Transform place data to Notion format
                     place_data = self.transformer.transform_place(place, source_url)
                     
-                    # Create the entry
+                    # Create the entry (with duplicate checking)
                     response = self.location_handler.create_location_entry(self.database_id, place_data)
                     page_id = response['id']
                     created_page_ids.append(page_id)
                     
-                    logger.info(f"Created Notion entry {i}/{len(location_info.places)}: {place.name}")
-                    logger.info(f"   Page ID: {page_id}")
+                    if response.get('duplicate', False):
+                        duplicate_count += 1
+                        logger.info(f"Duplicate entry {i}/{len(location_info.places)}: {place.name} (skipped)")
+                        logger.info(f"   Existing Page ID: {page_id}")
+                    else:
+                        logger.info(f"Created Notion entry {i}/{len(location_info.places)}: {place.name}")
+                        logger.info(f"   Page ID: {page_id}")
                     
                 except Exception as e:
                     logger.error(f"Failed to create entry for {place.name}: {e}")
                     continue
             
+            new_entries_count = len(created_page_ids) - duplicate_count
+            
             return NotionProcessingResult(
                 status=ProcessingStatus.SUCCESS,
-                entries_created=len(created_page_ids),
+                entries_created=new_entries_count,
                 page_ids=created_page_ids,
                 metadata={
                     'total_places': len(location_info.places),
+                    'new_entries': new_entries_count,
+                    'duplicates_skipped': duplicate_count,
                     'source_url': source_url
                 }
             )

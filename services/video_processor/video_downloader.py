@@ -41,10 +41,35 @@ class TikTokDownloader:
             
             # Get TikTok JSON data
             tt_json = pyk.alt_get_tiktok_json(video_url=video_url)
-            data_slot = tt_json["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]
             
-            # Extract image URLs
-            image_urls = [img["imageURL"]["urlList"][0] for img in data_slot["imagePost"]["images"]]
+            # Navigate through JSON structure with error handling
+            try:
+                data_slot = tt_json["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]
+            except KeyError as e:
+                # Try alternative JSON paths if the expected structure doesn't exist
+                ProcessingLogger.log_error(f"Expected JSON structure not found: {e}")
+                
+                # Try direct access to itemStruct in different locations
+                for alt_path in [
+                    ["__DEFAULT_SCOPE__", "webapp.video-detail", "itemStruct"],
+                    ["itemInfo", "itemStruct"],
+                    ["itemStruct"]
+                ]:
+                    try:
+                        data_slot = tt_json
+                        for key in alt_path:
+                            data_slot = data_slot[key]
+                        break
+                    except (KeyError, TypeError):
+                        continue
+                else:
+                    raise Exception(f"Could not find itemStruct in JSON response. Available keys: {list(tt_json.keys()) if isinstance(tt_json, dict) else 'Not a dict'}")
+            
+            # Extract image URLs with error handling
+            try:
+                image_urls = [img["imageURL"]["urlList"][0] for img in data_slot["imagePost"]["images"]]
+            except KeyError as e:
+                raise Exception(f"Could not extract image URLs from carousel data: {e}. Available keys in data_slot: {list(data_slot.keys()) if isinstance(data_slot, dict) else 'Not a dict'}")
             
             # Extract username and photo ID for consistent naming
             username = None
@@ -198,6 +223,12 @@ class TikTokDownloader:
             ProcessingLogger.log_processing_start('metadata-only extraction')
             Path(output_dir).mkdir(parents=True, exist_ok=True)
             
+            # For photo carousels, convert to video URL for metadata extraction
+            process_url = url
+            if '/photo/' in url:
+                process_url = url.replace('/photo/', '/video/')
+                logger.info(f"Converted photo URL to video URL for metadata: {process_url}")
+            
             # Save current directory and change to output directory
             original_cwd = os.getcwd()
             os.chdir(output_dir)
@@ -206,9 +237,9 @@ class TikTokDownloader:
                 # Extract only metadata using pyktok (False = don't download video)
                 if metadata_file:
                     metadata_filename = os.path.basename(metadata_file)
-                    pyk.save_tiktok(url, False, metadata_filename)
+                    pyk.save_tiktok(process_url, False, metadata_filename)
                 else:
-                    pyk.save_tiktok(url, False)
+                    pyk.save_tiktok(process_url, False)
                 
             finally:
                 os.chdir(original_cwd)

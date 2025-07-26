@@ -131,5 +131,3 @@ class LocationProcessor:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(location_info.to_dict(), f, indent=2, ensure_ascii=False)
         logger.info(f"Location info saved to: {output_file}")
-
-# Removed redundant CLI - use main.py instead
