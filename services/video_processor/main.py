@@ -211,6 +211,119 @@ class TikTokProcessor:
 
         ProcessingLogger.log_results_saved(results_file)
 
-# Removed legacy process_video method - use process_url instead
+    def process_metadata_only(self, url, output_dir="results"):
+        """Extract only metadata without downloading video content"""
+        results_file = TikTokURLParser.get_results_filename(url)
+        metadata_file = TikTokURLParser.get_metadata_filename(url)
 
+        # Check if already processed
+        if os.path.exists(results_file):
+            ProcessingLogger.log_existing_results(results_file)
+            with open(results_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+
+        # Extract metadata only
+        ProcessingLogger.log_download_start(url)
+        download_result = self.downloader.download_metadata_only(url, output_dir, metadata_file)
+
+        if not download_result['success']:
+            return {'success': False, 'error': f"Metadata extraction failed: {download_result['error']}"}
+
+        # Create results structure
+        results = ProcessingLogger.create_result_metadata(url, 'metadata-only')
+        results['download_result'] = download_result
+
+        # No audio or OCR processing for metadata-only
+        results['transcription'] = {'success': False, 'reason': 'Metadata-only processing'}
+        results['ocr'] = {'success': False, 'reason': 'Metadata-only processing'}
+
+        # For combined_text, use video description from metadata if available
+        if os.path.exists(metadata_file):
+            import pandas as pd
+            df = pd.read_csv(metadata_file)
+            if not df.empty and 'video_description' in df.columns:
+                results['combined_text'] = df['video_description'].iloc[0] or ""
+            else:
+                results['combined_text'] = ""
+        else:
+            results['combined_text'] = ""
+
+        ProcessingLogger.log_text_preview(results['combined_text'])
+        self._save_results(results, url)
+
+        return results
+
+    def process_audio_only(self, url, output_dir="results"):
+        """Process audio transcription only, skip OCR - based on _process_video"""
+        results_file = TikTokURLParser.get_results_filename(url)
+        metadata_file = TikTokURLParser.get_metadata_filename(url)
+
+        # Check if already processed
+        if os.path.exists(results_file):
+            ProcessingLogger.log_existing_results(results_file)
+            with open(results_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+
+        # Download video (needed for audio extraction)
+        ProcessingLogger.log_download_start(url)
+        download_result = self.downloader.download_content(url, output_dir, metadata_file)
+
+        if not download_result['success']:
+            return {'success': False, 'error': f"Download failed: {download_result['error']}"}
+
+        # Find video path (same logic as _process_video)
+        expected_filenames = TikTokURLParser.get_expected_filenames(url)
+        video_path = None
+        
+        for filename in expected_filenames:
+            if os.path.exists(filename):
+                video_path = filename
+                break
+            results_path = f"results/{filename}"
+            if os.path.exists(results_path):
+                video_path = results_path
+                break
+
+        if not video_path:
+            ProcessingLogger.log_file_not_found(expected_filenames)
+            results_dir = Path("results")
+            if results_dir.exists():
+                mp4_files = list(results_dir.glob("*.mp4"))
+                if mp4_files:
+                    video_path = str(max(mp4_files, key=os.path.getctime))
+                    ProcessingLogger.log_using_recent_file(os.path.basename(video_path))
+
+        if not video_path or not os.path.exists(video_path):
+            return {'success': False, 'error': f"Video file not found for audio extraction"}
+
+        # Create results structure
+        results = ProcessingLogger.create_result_metadata(url, 'audio-only')
+        results['video_path'] = video_path
+        results['download_result'] = download_result
+
+        # Audio transcription (same as _process_video)
+        ProcessingLogger.log_transcription_start()
+        try:
+            trans_result = self.transcriptor.transcribe_audio(video_path, language="en")
+            results['transcription'] = {
+                'text': trans_result.get('text', ''),
+                'language': trans_result.get('language', 'en'),
+                'success': bool(trans_result.get('text'))
+            }
+        except Exception as e:
+            results['transcription'] = {'success': False, 'error': str(e)}
+
+        # Skip OCR for audio-only
+        results['ocr'] = {'success': False, 'reason': 'Audio-only processing'}
+
+        # Combined text is just audio
+        if results['transcription']['success']:
+            results['combined_text'] = f"Audio: {results['transcription']['text']}"
+        else:
+            results['combined_text'] = ""
+
+        ProcessingLogger.log_text_preview(results['combined_text'])
+        self._save_results(results, url)
+
+        return results
 

@@ -13,9 +13,9 @@ from services.notion_service.location_handler import LocationHandler
 from utils.location_transformer import LocationToNotionTransformer
 from models.pipeline_models import (
     PipelineOptions, ProcessingResult, ProcessingStatus,
-    VideoProcessingResult, LocationProcessingResult, NotionProcessingResult
+    VideoProcessingResult, LocationProcessingResult, NotionProcessingResult, ProcessingMode
 )
-from utils.exceptions import VideoProcessingError, LocationExtractionError, NotionIntegrationError
+from utils.exceptions import VideoProcessingError, NotionIntegrationError
 from utils.url_parser import TikTokURLParser
 from utils.logging_config import setup_logging
 
@@ -51,7 +51,7 @@ class ProcessVideoCommand(Command):
     
     def execute(self, url: str) -> VideoProcessingResult:
         """
-        Process video from URL.
+        Process video from URL based on processing mode.
         
         Args:
             url: TikTok URL to process
@@ -60,10 +60,15 @@ class ProcessVideoCommand(Command):
             VideoProcessingResult with processing outcome
         """
         try:
-            logger.info(f"Processing video: {url}")
+            logger.info(f"Processing video: {url} (mode: {self.options.processing_mode.value})")
             
-            # Process the video
-            video_results = self.processor.process_url(url, self.options.output_dir, "tiktok")
+            # Process the video based on mode
+            if self.options.processing_mode == ProcessingMode.METADATA_ONLY:
+                video_results = self.processor.process_metadata_only(url, self.options.output_dir)
+            elif self.options.processing_mode == ProcessingMode.AUDIO_ONLY:
+                video_results = self.processor.process_audio_only(url, self.options.output_dir)
+            else:  # FULL mode
+                video_results = self.processor.process_url(url, self.options.output_dir, "tiktok")
             
             if not video_results.get('success', False):
                 error_msg = video_results.get('error', 'Unknown video processing error')
@@ -84,7 +89,8 @@ class ProcessVideoCommand(Command):
                 combined_text=combined_text,
                 metadata={
                     'url': url,
-                    'content_type': video_results.get('content_type', 'unknown')
+                    'content_type': video_results.get('content_type', 'unknown'),
+                    'processing_mode': self.options.processing_mode.value
                 }
             )
             
@@ -95,7 +101,7 @@ class ProcessVideoCommand(Command):
             return VideoProcessingResult(
                 status=ProcessingStatus.FAILED,
                 error_message=error_msg,
-                metadata={'url': url}
+                metadata={'url': url, 'processing_mode': self.options.processing_mode.value}
             )
     
     def _extract_transcription_text(self, results: Dict[str, Any]) -> str:

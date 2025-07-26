@@ -182,6 +182,53 @@ class TikTokDownloader:
             'video_files': video_paths
         }
     
-    def download_video(self, url, output_dir=".", metadata_file=None):
-        """Legacy method for backward compatibility"""
-        return self.download_content(url, output_dir, metadata_file)
+    def download_metadata_only(self, url, output_dir=".", metadata_file=None):
+        """
+        Extract only metadata without downloading video content
+        
+        Args:
+            url: TikTok URL to extract metadata from
+            output_dir: Directory to save metadata
+            metadata_file: Optional CSV file to save metadata
+            
+        Returns:
+            Dictionary with metadata extraction results
+        """
+        try:
+            ProcessingLogger.log_processing_start('metadata-only extraction')
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            
+            # Save current directory and change to output directory
+            original_cwd = os.getcwd()
+            os.chdir(output_dir)
+            
+            try:
+                # Extract only metadata using pyktok (False = don't download video)
+                if metadata_file:
+                    metadata_filename = os.path.basename(metadata_file)
+                    pyk.save_tiktok(url, False, metadata_filename)
+                else:
+                    pyk.save_tiktok(url, False)
+                
+            finally:
+                os.chdir(original_cwd)
+            
+            ProcessingLogger.log_success(f"Successfully extracted metadata: {url}")
+            
+            return {
+                'url': url,
+                'success': True,
+                'content_type': 'metadata-only',
+                'output_dir': output_dir,
+                'metadata_file': metadata_file
+            }
+            
+        except Exception as e:
+            error_msg = f"Error extracting metadata from {url}: {e}"
+            ProcessingLogger.log_error(error_msg)
+            return {
+                'url': url,
+                'success': False,
+                'content_type': 'metadata-only',
+                'error': str(e)
+            }

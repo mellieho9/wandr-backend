@@ -16,6 +16,13 @@ class ProcessingStatus(Enum):
     PARTIAL = "partial"
 
 
+class ProcessingMode(Enum):
+    """Processing mode based on webhook tags"""
+    FULL = "full"  # No tags or None - full processing
+    METADATA_ONLY = "metadata-only"  # Skip audio and screenshots
+    AUDIO_ONLY = "audio-only"  # Skip screenshots only
+
+
 @dataclass
 class PipelineOptions:
     """Configuration options for pipeline execution"""
@@ -29,6 +36,7 @@ class PipelineOptions:
     whisper_model: str = DEFAULT_WHISPER_MODEL
     frame_interval: float = DEFAULT_FRAME_INTERVAL
     max_frames: int = DEFAULT_MAX_FRAMES
+    processing_mode: ProcessingMode = ProcessingMode.FULL
 
 
 @dataclass

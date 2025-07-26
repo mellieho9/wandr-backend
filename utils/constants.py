@@ -28,6 +28,16 @@ NOTION_API_TIMEOUT = 30
 # Whisper model sizes (ordered by quality/speed tradeoff)
 WHISPER_MODELS = ['tiny', 'base', 'small', 'medium', 'large']
 
+# Webhook processing constants
+WEBHOOK_WHISPER_MODEL = "tiny"
+WEBHOOK_FRAME_INTERVAL = 3.0
+WEBHOOK_MAX_FRAMES = 8
+WEBHOOK_OUTPUT_DIR = "results"
+
+# Processing tag constants
+TAG_METADATA_ONLY = "metadata-only"
+TAG_AUDIO_ONLY = "audio-only"
+
 # ANSI color constants
 class Colors:
     """ANSI color code constants for logging"""

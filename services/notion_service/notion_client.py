@@ -143,27 +143,6 @@ class NotionClient:
         location_handler = LocationHandler(self)
         return location_handler.create_location_entry(database_id, location_data)
     
-    def get_pending_urls(self, database_id: str, url_property: str = "URL", 
-                        date_property: str = "Created", status_property: str = "Status") -> List[Dict[str, Any]]:
-        """
-        Query database for URLs with 'Pending' status posted today.
-        
-        Args:
-            database_id: The ID of the database to query
-            url_property: Name of the URL property in the database
-            date_property: Name of the date property to filter by (default: "Created")
-            status_property: Name of the status property to filter by (default: "Status")
-            
-        Returns:
-            List of dictionaries containing URL and page_id for pending entries
-        """
-        from .url_processor import URLProcessor
-        
-        url_processor = URLProcessor(self)
-        return url_processor.get_pending_urls(database_id, url_property, date_property, status_property)
-    
-    
-    
     def update_entry_status(self, page_id: str, status: str, status_property: str = "Status") -> bool:
         """
         Update the status of a Notion database entry.
