@@ -61,5 +61,5 @@ ENV PYTHONPATH=/app
 # Expose port
 EXPOSE 8080
 
-# Default command - start virtual display and run webhook server
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & python app.py"]
+# Default command - start virtual display and run webhook server with gunicorn
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --timeout 0 app:create_app()"]

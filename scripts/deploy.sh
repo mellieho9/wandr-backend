@@ -56,7 +56,7 @@ gcloud run deploy $SERVICE_NAME \
   --max-instances=10 \
   --min-instances=0 \
   --allow-unauthenticated \
-  --set-env-vars="PYTHONPATH=/app,HOST=0.0.0.0,PORT=8080" \
+  --set-env-vars="PYTHONPATH=/app,HOST=0.0.0.0" \
   --set-secrets="VISION_API_KEY=VISION_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest,NOTION_API_KEY=NOTION_API_KEY:latest,NOTION_PLACES_DB_ID=NOTION_PLACES_DB_ID:latest"
 
 # Get service URL
