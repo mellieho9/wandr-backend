@@ -55,29 +55,8 @@ RUN mkdir -p results logs
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Add a simple web server for Cloud Run health checks
-RUN echo 'from flask import Flask\n\
-app = Flask(__name__)\n\
-\n\
-@app.route("/")\n\
-def health():\n\
-    return {"status": "healthy", "service": "wandr-backend"}\n\
-\n\
-@app.route("/process", methods=["POST"])\n\
-def process():\n\
-    import subprocess\n\
-    result = subprocess.run(["python", "main.py", "--process-pending-urls"], capture_output=True, text=True)\n\
-    return {"success": result.returncode == 0, "output": result.stdout, "error": result.stderr}\n\
-\n\
-if __name__ == "__main__":\n\
-    import os\n\
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))' > app.py
-
-# Add Flask to requirements if not present
-RUN pip install flask
-
 # Expose port
 EXPOSE 8080
 
-# Default command - start virtual display and run application
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & python main.py --process-pending-urls"]
+# Default command - start virtual display and run webhook server
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & python app.py"]
