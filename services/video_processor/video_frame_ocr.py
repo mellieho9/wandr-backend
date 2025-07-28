@@ -225,30 +225,3 @@ class VideoFrameOCR:
             raise Exception(f"Network error calling Vision API: {e}")
         except json.JSONDecodeError as e:
             raise Exception(f"Invalid JSON response from Vision API: {e}")
-
-# Example usage and testing
-if __name__ == "__main__":
-    from utils.config import config
-    
-    api_key = config.get_vision_api_key()
-    if not api_key:
-        logger.error("VISION_API_KEY not found in environment variables")
-        logger.error("Please set it in your .env file")
-        exit(1)
-    
-    try:
-        processor = VideoFrameOCR(api_key=api_key)
-        video_path = "t_ZP8rwYBo3_.mp4"
-        
-        if os.path.exists(video_path):
-            results = processor.extract_frames_and_ocr(video_path, frame_interval=3.0)
-            
-            logger.info(f"\nOCR Results:")
-            for r in results:
-                if r.get('text'):
-                    logger.info(f"  {r['timestamp']}s: {r['text']}")
-        else:
-            logger.error(f"Video file not found: {video_path}")
-            
-    except Exception as e:
-        logger.error(e)

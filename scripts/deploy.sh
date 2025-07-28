@@ -13,7 +13,7 @@ else
 fi
 
 # Check required variables
-required_vars=("PROJECT_ID" "REGION" "SERVICE_NAME" "IMAGE_NAME")
+required_vars=("PROJECT_ID" "REGION" "SERVICE_NAME")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
         echo "❌ Required environment variable $var is not set in .env"
@@ -21,13 +21,28 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
+# Auto-generate IMAGE_NAME from PROJECT_ID and SERVICE_NAME using Artifact Registry
+IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}"
+echo "🏷️  Generated image name: $IMAGE_NAME"
+
 echo "🚀 Starting webhook service deployment..."
+
+# Create Artifact Registry repository if it doesn't exist
+echo "📋 Setting up Artifact Registry..."
+gcloud artifacts repositories create $SERVICE_NAME \
+  --repository-format=docker \
+  --location=$REGION \
+  --description="Wandr webhook service container images" \
+  --quiet || echo "Repository already exists"
+
+# Configure Docker authentication for Artifact Registry
+gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
 # Build and push Docker image
 echo "📦 Building Docker image..."
 docker build -t $IMAGE_NAME .
 
-echo "📤 Pushing image to registry..."
+echo "📤 Pushing image to Artifact Registry..."
 docker push $IMAGE_NAME
 
 # Deploy Cloud Run Service

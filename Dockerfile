@@ -1,4 +1,4 @@
-# Use Python 3.11 slim for better performance
+# Use Python slim base with manual whisper installation for better control
 FROM python:3.11-slim
 
 # Set environment variables
@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8080 \
     DISPLAY=:99
 
-# Install system dependencies
+# Install system dependencies including whisper
 RUN apt-get update && apt-get install -y \
     # OpenCV dependencies
     libglib2.0-0 \
@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
-    # FFmpeg for video processing
+    # FFmpeg for whisper
     ffmpeg \
     # Git for potential package installations
     git \
@@ -25,6 +25,9 @@ RUN apt-get update && apt-get install -y \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# Install whisper globally for CLI usage (lightweight approach)
+RUN pip install --no-cache-dir openai-whisper
 
 # Create app directory and user
 WORKDIR /app
@@ -36,7 +39,7 @@ RUN useradd --create-home --shell /bin/bash appuser \
 # Copy requirements first for better caching
 COPY --chown=appuser:appuser requirements.txt .
 
-# Install Python dependencies as root, then switch to appuser
+# Install Python dependencies (excluding whisper since it's already installed)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browsers for pyktok

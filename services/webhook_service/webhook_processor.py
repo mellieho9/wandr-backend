@@ -48,6 +48,10 @@ class WebhookProcessor(LoggerMixin):
             # Process using unified pipeline with mode
             results = self._process_with_mode(payload.url, mode)
             
+            # Check if any step had errors and raise exception if so
+            if 'error' in results:
+                raise Exception(results['error'])
+            
             return {
                 'success': True,
                 'processing_type': processing_type.value,
@@ -70,12 +74,16 @@ class WebhookProcessor(LoggerMixin):
         
         try:
             # Create pipeline options with the processing mode
+            # Only create Notion entry if database_id is configured
+            database_id = config.get_notion_places_db_id()
+            create_notion_entry = bool(database_id)
+            
             options = PipelineOptions(
                 url=url,
                 categories=[],
                 output_dir=WEBHOOK_OUTPUT_DIR,
-                create_notion_entry=True,
-                database_id=config.get_notion_places_db_id(),
+                create_notion_entry=create_notion_entry,
+                database_id=database_id,
                 whisper_model=WEBHOOK_WHISPER_MODEL,
                 frame_interval=WEBHOOK_FRAME_INTERVAL,
                 max_frames=WEBHOOK_MAX_FRAMES,

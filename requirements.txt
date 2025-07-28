@@ -7,7 +7,6 @@ pillow
 requests
 python-dotenv
 google-cloud-vision
-openai-whisper
 googlemaps
 pandas
 google-generativeai
