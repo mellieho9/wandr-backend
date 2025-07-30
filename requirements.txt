@@ -1,7 +1,6 @@
 pyktok
 playwright
-opencv-python
-easyocr
+opencv-python-headless
 numpy
 pillow
 requests

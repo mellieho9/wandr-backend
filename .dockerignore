@@ -64,18 +64,22 @@ htmlcov/
 # Logs
 *.log
 
-# Downloaded content (ephemeral)
+# Downloaded content (ephemeral) - CRITICAL: Don't copy large files
 *.mp4
 *.mov
 *.avi
 *.mkv
 *.webm
 *_metadata.csv
+results/
+wandr-*.log
 
 # Development files
 .claude
 Makefile
 
 # Deployment files (don't copy into container)
-deploy.sh
-maintenance.sh
+scripts/deploy.sh
+
+# Scripts that might have line ending issues
+scripts/start.sh
