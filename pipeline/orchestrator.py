@@ -55,10 +55,10 @@ class PipelineOrchestrator(LoggerMixin):
                 self.logger.error(f"Video processing failed: {video_result.error_message}")
                 return results
             
-            # Step 2: Extract location information
+            # Step 2: Extract location information using in-memory data
             self.logger.info("Step 2: Extracting location information...")
             location_command = ExtractLocationCommand(self.options)
-            location_result = location_command.execute(url)
+            location_result = location_command.execute_with_data(url, video_result.data)
             results['location'] = location_result
             
             if not location_result.success:

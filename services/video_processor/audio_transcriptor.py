@@ -33,16 +33,21 @@ class AudioTranscriptor:
 
             logger.info("Transcribing audio...")
             
+            with open(audio_path, 'rb') as f:
+                audio_content = f.read()
+            
+            file_tuple = (Path(audio_path).name, audio_content, "audio/mp4")
+            
             result = self.client.audio.transcriptions.create(
-                model="gpt-4o-transcribe",
-                file = audio_path,
+                model="whisper-1",
+                file=file_tuple,
                 response_format="text",
             )
-            
+
             log_success(logger, "Transcription completed")
             
             return {
-                'text': result.text,
+                'text': result,
             }
             
         except Exception as e:

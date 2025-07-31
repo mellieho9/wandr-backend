@@ -77,8 +77,7 @@ class VideoFrameOCR:
                     results.append({'timestamp': timestamp, 'text': '', 'error': str(e)})
             
             text_found = len([r for r in results if r.get('text')])
-            ProcessingLogger.log_success(f"Complete: {text_found}/{len(results)} frames with text")
-            
+            ProcessingLogger.log_success(f"Complete: {text_found}/{len(results)} frames with text. Results: {results}")
             return results
             
         finally:

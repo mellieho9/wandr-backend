@@ -13,7 +13,7 @@ from services.notion_service.location_handler import LocationHandler
 from utils.location_transformer import LocationToNotionTransformer
 from models.pipeline_models import (
     PipelineOptions, ProcessingResult, ProcessingStatus,
-    VideoProcessingResult, LocationProcessingResult, NotionProcessingResult, ProcessingMode
+    VideoProcessingResult, LocationProcessingResult, NotionProcessingResult
 )
 from utils.exceptions import VideoProcessingError, NotionIntegrationError
 from utils.url_parser import TikTokURLParser
@@ -61,13 +61,7 @@ class ProcessVideoCommand(Command):
         try:
             logger.info(f"Processing video: {url} (mode: {self.options.processing_mode.value})")
             
-            # Process the video based on mode
-            if self.options.processing_mode == ProcessingMode.METADATA_ONLY:
-                video_results = self.processor.process_metadata_only(url, self.options.output_dir)
-            elif self.options.processing_mode == ProcessingMode.AUDIO_ONLY:
-                video_results = self.processor.process_audio_only(url, self.options.output_dir)
-            else:  # FULL mode
-                video_results = self.processor.process_url(url, self.options.output_dir, "tiktok")
+            video_results, metadata = self.processor.process_with_data_return(url, self.options.processing_mode, self.options.output_dir)
             
             if not video_results.get('success', False):
                 error_msg = video_results.get('error', 'Unknown video processing error')
@@ -81,7 +75,7 @@ class ProcessVideoCommand(Command):
             
             return VideoProcessingResult(
                 status=ProcessingStatus.SUCCESS,
-                data=video_results,
+                data={'video_results': video_results, 'metadata': metadata},
                 video_path=video_path,
                 transcription_text=transcription_text,
                 ocr_text=ocr_text,
@@ -126,6 +120,49 @@ class ExtractLocationCommand(Command):
         self.options = options
         self.processor = LocationProcessor()
     
+    def execute_with_data(self, url: str, video_data: dict) -> LocationProcessingResult:
+        """
+        Extract location information using in-memory video data.
+        
+        Args:
+            url: Original TikTok URL
+            video_data: Dictionary containing video_results and metadata
+            
+        Returns:
+            LocationProcessingResult with extraction outcome
+        """
+        try:
+            logger.info(f"Extracting location information for: {url}")
+            
+            video_results = video_data.get('video_results', {})
+            metadata = video_data.get('metadata', {})
+            
+            # Extract location info using in-memory data
+            location_info = self.processor.extract_from_data(
+                video_results, metadata, self.options.categories
+            )
+            
+            return LocationProcessingResult(
+                status=ProcessingStatus.SUCCESS,
+                data=location_info,
+                places_found=len(location_info.places),
+                location_file=None,  # No file saved in memory mode
+                metadata={
+                    'url': url,
+                    'content_type': location_info.content_type
+                }
+            )
+            
+        except Exception as e:
+            error_msg = f"Location extraction failed: {str(e)}"
+            logger.error(error_msg)
+            
+            return LocationProcessingResult(
+                status=ProcessingStatus.FAILED,
+                error_message=error_msg,
+                metadata={'url': url}
+            )
+
     def execute(self, url: str) -> LocationProcessingResult:
         """
         Extract location information from processed video.
