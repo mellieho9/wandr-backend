@@ -16,3 +16,4 @@ flask
 gunicorn
 google-cloud-storage
 google-cloud-secret-manager
+openai

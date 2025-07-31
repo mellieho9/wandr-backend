@@ -3,7 +3,6 @@ Application constants and configuration values
 """
 
 # Processing defaults
-DEFAULT_WHISPER_MODEL = "tiny"
 DEFAULT_FRAME_INTERVAL = 3.0
 DEFAULT_MAX_FRAMES = 8
 DEFAULT_OUTPUT_DIR = "results"
@@ -25,11 +24,7 @@ DEFAULT_API_TIMEOUT = 30
 VISION_API_TIMEOUT = 30
 NOTION_API_TIMEOUT = 30
 
-# Whisper model sizes (ordered by quality/speed tradeoff)
-WHISPER_MODELS = ['tiny', 'base', 'small', 'medium', 'large']
-
 # Webhook processing constants
-WEBHOOK_WHISPER_MODEL = "tiny"
 WEBHOOK_FRAME_INTERVAL = 3.0
 WEBHOOK_MAX_FRAMES = 8
 WEBHOOK_OUTPUT_DIR = "results"

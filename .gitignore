@@ -73,9 +73,6 @@ logs/
 *.temp
 temp/
 
-# Model files (Whisper models can be large)
-video_processor/*.pt
-video_processor/models/
 
 # Results and output
 results/

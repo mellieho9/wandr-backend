@@ -9,7 +9,7 @@ from pipeline.orchestrator import PipelineOrchestrator
 from utils.logging_config import LoggerMixin, setup_logging
 from utils.config import config
 from utils.constants import (
-    WEBHOOK_WHISPER_MODEL, WEBHOOK_FRAME_INTERVAL, 
+    WEBHOOK_FRAME_INTERVAL, 
     WEBHOOK_MAX_FRAMES, WEBHOOK_OUTPUT_DIR
 )
 
@@ -84,7 +84,6 @@ class WebhookProcessor(LoggerMixin):
                 output_dir=WEBHOOK_OUTPUT_DIR,
                 create_notion_entry=create_notion_entry,
                 database_id=database_id,
-                whisper_model=WEBHOOK_WHISPER_MODEL,
                 frame_interval=WEBHOOK_FRAME_INTERVAL,
                 max_frames=WEBHOOK_MAX_FRAMES,
                 processing_mode=mode

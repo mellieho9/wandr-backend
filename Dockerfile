@@ -11,9 +11,6 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
 
-# Install whisper for both CLI and Python API
-RUN pip install --no-cache-dir --user openai-whisper torch
-
 # Intermediate stage for system dependencies
 FROM python:3.11-slim AS runtime-builder
 

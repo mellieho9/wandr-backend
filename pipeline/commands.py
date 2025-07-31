@@ -44,7 +44,6 @@ class ProcessVideoCommand(Command):
         
         self.processor = TikTokProcessor(
             vision_api_key, 
-            options.whisper_model,
             options.frame_interval,
             options.max_frames
         )

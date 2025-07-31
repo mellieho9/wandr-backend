@@ -14,24 +14,23 @@ from .video_frame_ocr import VideoFrameOCR
 from utils import TikTokURLParser, ProcessingLogger
 
 class TikTokProcessor:
-    def __init__(self, vision_api_key=None, whisper_model="tiny", frame_interval=3.0, max_frames=8):
+    def __init__(self, vision_api_key=None, frame_interval=3.0, max_frames=8):
         """
         Initialize TikTok processor with configurable options.
         
         Args:
             vision_api_key: Google Vision API key for OCR
-            whisper_model: Whisper model size for transcription
             frame_interval: Seconds between frame extractions
             max_frames: Maximum frames to extract for OCR
         """
         self.downloader = TikTokDownloader()
-        self.transcriptor = AudioTranscriptor(model_size=whisper_model)
+        self.transcriptor = AudioTranscriptor()
         self.ocr_processor = VideoFrameOCR(vision_api_key) if vision_api_key else None
         self.frame_interval = frame_interval
         self.max_frames = max_frames
         ProcessingLogger.log_initialization("TikTok processor")
 
-    def process_url(self, url, output_dir="results", category="tiktok"):
+    def process_url(self, url, output_dir="results"):
         """Enhanced method to download and process TikTok content (video or carousel)"""
         results_file = TikTokURLParser.get_results_filename(url)
         metadata_file = TikTokURLParser.get_metadata_filename(url)
@@ -149,11 +148,10 @@ class TikTokProcessor:
         # Audio transcription
         ProcessingLogger.log_transcription_start()
         try:
-            trans_result = self.transcriptor.transcribe_audio(video_path, language="en")
+            trans_result = self.transcriptor.transcribe_audio(video_path)
             results['transcription'] = {
-                'text': trans_result.get('text', ''),
-                'language': trans_result.get('language', 'en'),
-                'success': bool(trans_result.get('text'))
+                'text': trans_result,
+                'success': bool(trans_result)
             }
         except Exception as e:
             results['transcription'] = {'success': False, 'error': str(e)}
@@ -304,11 +302,10 @@ class TikTokProcessor:
         # Audio transcription (same as _process_video)
         ProcessingLogger.log_transcription_start()
         try:
-            trans_result = self.transcriptor.transcribe_audio(video_path, language="en")
+            trans_result = self.transcriptor.transcribe_audio(video_path)
             results['transcription'] = {
-                'text': trans_result.get('text', ''),
-                'language': trans_result.get('language', 'en'),
-                'success': bool(trans_result.get('text'))
+                'text': trans_result,
+                'success': bool(trans_result)
             }
         except Exception as e:
             results['transcription'] = {'success': False, 'error': str(e)}

@@ -11,7 +11,7 @@ class TestTikTokProcessorIntegration:
     @pytest.mark.slow
     def test_process_url_without_api_keys(self, temp_dir):
         """Test video processing without API keys (OCR disabled)"""
-        processor = TikTokProcessor(vision_api_key=None, whisper_model="tiny")
+        processor = TikTokProcessor(vision_api_key=None)
         
         # This would normally download a video, but we'll mock it
         with patch.object(processor.downloader, 'download_content') as mock_download:

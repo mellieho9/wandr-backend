@@ -18,16 +18,6 @@ docker rm $CONTAINER_NAME 2>/dev/null || true
 echo "📦 Building Docker image..."
 docker build -t $IMAGE_NAME .
 
-# Test whisper Python API availability
-echo "🎵 Testing Whisper Python API..."
-docker run --rm $IMAGE_NAME python -c "import whisper; print('Whisper available')" > /dev/null
-if [ $? -eq 0 ]; then
-    echo "✅ Whisper Python API available"
-else
-    echo "❌ Whisper Python API failed"
-    exit 1
-fi
-
 # Start container with environment variables
 echo "🚀 Starting webhook service..."
 if [ -f .env ]; then
