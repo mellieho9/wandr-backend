@@ -27,18 +27,74 @@ class LocationHandler:
     def create_location_entry(self, database_id: str, location_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a location entry specifically formatted for the wandr database schema.
+        Prevents duplicates by checking if an entry with the same name already exists.
         
         Args:
             database_id: The ID of the database
             location_data: Location data in the format from location processor
             
         Returns:
-            The created page object from Notion API
+            The created page object from Notion API, or existing page if duplicate found
         """
+        # Check for duplicates before creating
+        place_name = location_data.get("name of place")
+        if place_name:
+            existing_entry = self._find_existing_entry(database_id, place_name)
+            if existing_entry:
+                logger.info(f"Duplicate entry found for '{place_name}', skipping creation")
+                return {
+                    "id": existing_entry["id"],
+                    "duplicate": True,
+                    "message": f"Entry for '{place_name}' already exists"
+                }
+        
         # Convert location data to Notion properties format
         properties = self._format_location_properties(location_data)
         
-        return self.notion_client.create_database_entry(database_id, properties)
+        # Create new entry
+        result = self.notion_client.create_database_entry(database_id, properties)
+        result["duplicate"] = False
+        logger.info(f"Created new entry for '{place_name}'")
+        
+        return result
+    
+    def _find_existing_entry(self, database_id: str, place_name: str) -> Dict[str, Any]:
+        """
+        Find existing entry with the same place name.
+        
+        Args:
+            database_id: The ID of the database to search
+            place_name: Name of the place to search for
+            
+        Returns:
+            Existing entry dict if found, None otherwise
+        """
+        try:
+            # Create filter to search for entries with matching "Name of Place" title
+            filter_conditions = {
+                "property": "Name of Place",
+                "title": {
+                    "equals": place_name
+                }
+            }
+            
+            # Query the database
+            response = self.notion_client.query_database(
+                database_id=database_id,
+                filter_conditions=filter_conditions
+            )
+            
+            # Return first matching result if any
+            results = response.get('results', [])
+            if results:
+                logger.debug(f"Found existing entry for '{place_name}': {results[0]['id']}")
+                return results[0]
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error searching for existing entry '{place_name}': {e}")
+            return None
     
     def _format_location_properties(self, location_data: Dict[str, Any]) -> Dict[str, Any]:
         """

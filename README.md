@@ -163,7 +163,7 @@ wandr-backend/
 ├── services/                         # Core service packages
 │   ├── video_processor/             # TikTok video processing
 │   │   ├── video_downloader.py     # Download with carousel support
-│   │   ├── audio_transcriptor.py   # Whisper transcription
+│   │   ├── audio_transcriptor.py   # Transcription
 │   │   └── video_frame_ocr.py      # Google Vision OCR
 │   ├── location_processor/          # Location extraction
 │   │   ├── location_analyzer.py    # Gemini AI analysis

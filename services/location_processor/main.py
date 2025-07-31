@@ -37,24 +37,10 @@ class LocationProcessor:
         
         return self.extract_from_files(results_file, metadata_file, place_category)
     
-    def extract_from_files(self, results_file: str, metadata_file: str = None, place_category: list = None) -> LocationInfo:
-        """Extract location info from video processing results"""
-        
-        with open(results_file, 'r', encoding='utf-8') as f:
-            results = json.load(f)
-        
-        metadata = None
-        if metadata_file and os.path.exists(metadata_file):
-            try:
-                metadata_df = pd.read_csv(metadata_file)
-                if not metadata_df.empty:
-                    metadata = metadata_df.iloc[0].to_dict()
-            except Exception as e:
-                logger.warning(f"Could not load metadata: {e}")
-        
-        url = results.get('original_url', '')
-
-        combined_text = self._get_combined_text(results)
+    def extract_from_data(self, video_results: dict, metadata: dict = None, place_category: list = None) -> LocationInfo:
+        """Extract location info from in-memory video processing results"""
+        url = video_results.get('original_url', '')
+        combined_text = self._get_combined_text(video_results)
         
         analysis_result = self.analyzer.analyze_content(combined_text, metadata, place_category)
         
@@ -109,6 +95,23 @@ class LocationProcessor:
             content_type=content_type,
             places=places_list if places_list else []
         )
+
+    def extract_from_files(self, results_file: str, metadata_file: str = None, place_category: list = None) -> LocationInfo:
+        """Extract location info from video processing results files (legacy method)"""
+        
+        with open(results_file, 'r', encoding='utf-8') as f:
+            results = json.load(f)
+        
+        metadata = None
+        if metadata_file and os.path.exists(metadata_file):
+            try:
+                metadata_df = pd.read_csv(metadata_file)
+                if not metadata_df.empty:
+                    metadata = metadata_df.iloc[0].to_dict()
+            except Exception as e:
+                logger.warning(f"Could not load metadata: {e}")
+        
+        return self.extract_from_data(results, metadata, place_category)
     
     def _get_combined_text(self, results: Dict) -> str:
         """Extract and combine text from results"""
@@ -131,5 +134,3 @@ class LocationProcessor:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(location_info.to_dict(), f, indent=2, ensure_ascii=False)
         logger.info(f"Location info saved to: {output_file}")
-
-# Removed redundant CLI - use main.py instead

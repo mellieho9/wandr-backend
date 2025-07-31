@@ -15,7 +15,7 @@ from models.pipeline_models import (
     PipelineOptions, ProcessingResult, ProcessingStatus,
     VideoProcessingResult, LocationProcessingResult, NotionProcessingResult
 )
-from utils.exceptions import VideoProcessingError, LocationExtractionError, NotionIntegrationError
+from utils.exceptions import VideoProcessingError, NotionIntegrationError
 from utils.url_parser import TikTokURLParser
 from utils.logging_config import setup_logging
 
@@ -44,14 +44,13 @@ class ProcessVideoCommand(Command):
         
         self.processor = TikTokProcessor(
             vision_api_key, 
-            options.whisper_model,
             options.frame_interval,
             options.max_frames
         )
     
     def execute(self, url: str) -> VideoProcessingResult:
         """
-        Process video from URL.
+        Process video from URL based on processing mode.
         
         Args:
             url: TikTok URL to process
@@ -60,10 +59,9 @@ class ProcessVideoCommand(Command):
             VideoProcessingResult with processing outcome
         """
         try:
-            logger.info(f"Processing video: {url}")
+            logger.info(f"Processing video: {url} (mode: {self.options.processing_mode.value})")
             
-            # Process the video
-            video_results = self.processor.process_url(url, self.options.output_dir, "tiktok")
+            video_results, metadata = self.processor.process_with_data_return(url, self.options.processing_mode, self.options.output_dir)
             
             if not video_results.get('success', False):
                 error_msg = video_results.get('error', 'Unknown video processing error')
@@ -77,14 +75,15 @@ class ProcessVideoCommand(Command):
             
             return VideoProcessingResult(
                 status=ProcessingStatus.SUCCESS,
-                data=video_results,
+                data={'video_results': video_results, 'metadata': metadata},
                 video_path=video_path,
                 transcription_text=transcription_text,
                 ocr_text=ocr_text,
                 combined_text=combined_text,
                 metadata={
                     'url': url,
-                    'content_type': video_results.get('content_type', 'unknown')
+                    'content_type': video_results.get('content_type', 'unknown'),
+                    'processing_mode': self.options.processing_mode.value
                 }
             )
             
@@ -95,7 +94,7 @@ class ProcessVideoCommand(Command):
             return VideoProcessingResult(
                 status=ProcessingStatus.FAILED,
                 error_message=error_msg,
-                metadata={'url': url}
+                metadata={'url': url, 'processing_mode': self.options.processing_mode.value}
             )
     
     def _extract_transcription_text(self, results: Dict[str, Any]) -> str:
@@ -121,6 +120,49 @@ class ExtractLocationCommand(Command):
         self.options = options
         self.processor = LocationProcessor()
     
+    def execute_with_data(self, url: str, video_data: dict) -> LocationProcessingResult:
+        """
+        Extract location information using in-memory video data.
+        
+        Args:
+            url: Original TikTok URL
+            video_data: Dictionary containing video_results and metadata
+            
+        Returns:
+            LocationProcessingResult with extraction outcome
+        """
+        try:
+            logger.info(f"Extracting location information for: {url}")
+            
+            video_results = video_data.get('video_results', {})
+            metadata = video_data.get('metadata', {})
+            
+            # Extract location info using in-memory data
+            location_info = self.processor.extract_from_data(
+                video_results, metadata, self.options.categories
+            )
+            
+            return LocationProcessingResult(
+                status=ProcessingStatus.SUCCESS,
+                data=location_info,
+                places_found=len(location_info.places),
+                location_file=None,  # No file saved in memory mode
+                metadata={
+                    'url': url,
+                    'content_type': location_info.content_type
+                }
+            )
+            
+        except Exception as e:
+            error_msg = f"Location extraction failed: {str(e)}"
+            logger.error(error_msg)
+            
+            return LocationProcessingResult(
+                status=ProcessingStatus.FAILED,
+                error_message=error_msg,
+                metadata={'url': url}
+            )
+
     def execute(self, url: str) -> LocationProcessingResult:
         """
         Extract location information from processed video.
@@ -214,30 +256,40 @@ class CreateNotionEntryCommand(Command):
             logger.info(f"Creating {len(location_info.places)} Notion entries...")
             
             created_page_ids = []
+            duplicate_count = 0
             
             for i, place in enumerate(location_info.places, 1):
                 try:
                     # Transform place data to Notion format
                     place_data = self.transformer.transform_place(place, source_url)
                     
-                    # Create the entry
+                    # Create the entry (with duplicate checking)
                     response = self.location_handler.create_location_entry(self.database_id, place_data)
                     page_id = response['id']
                     created_page_ids.append(page_id)
                     
-                    logger.info(f"Created Notion entry {i}/{len(location_info.places)}: {place.name}")
-                    logger.info(f"   Page ID: {page_id}")
+                    if response.get('duplicate', False):
+                        duplicate_count += 1
+                        logger.info(f"Duplicate entry {i}/{len(location_info.places)}: {place.name} (skipped)")
+                        logger.info(f"   Existing Page ID: {page_id}")
+                    else:
+                        logger.info(f"Created Notion entry {i}/{len(location_info.places)}: {place.name}")
+                        logger.info(f"   Page ID: {page_id}")
                     
                 except Exception as e:
                     logger.error(f"Failed to create entry for {place.name}: {e}")
                     continue
             
+            new_entries_count = len(created_page_ids) - duplicate_count
+            
             return NotionProcessingResult(
                 status=ProcessingStatus.SUCCESS,
-                entries_created=len(created_page_ids),
+                entries_created=new_entries_count,
                 page_ids=created_page_ids,
                 metadata={
                     'total_places': len(location_info.places),
+                    'new_entries': new_entries_count,
+                    'duplicates_skipped': duplicate_count,
                     'source_url': source_url
                 }
             )

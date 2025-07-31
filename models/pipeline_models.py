@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
-from utils.constants import DEFAULT_WHISPER_MODEL, DEFAULT_FRAME_INTERVAL, DEFAULT_MAX_FRAMES, DEFAULT_OUTPUT_DIR
+from utils.constants import DEFAULT_FRAME_INTERVAL, DEFAULT_MAX_FRAMES, DEFAULT_OUTPUT_DIR
 
 
 class ProcessingStatus(Enum):
@@ -14,6 +14,13 @@ class ProcessingStatus(Enum):
     SUCCESS = "success"
     FAILED = "failed"
     PARTIAL = "partial"
+
+
+class ProcessingMode(Enum):
+    """Processing mode based on webhook tags"""
+    FULL = "full"  # No tags or None - full processing
+    METADATA_ONLY = "metadata-only"  # Skip audio and screenshots
+    AUDIO_ONLY = "audio-only"  # Skip screenshots only
 
 
 @dataclass
@@ -26,9 +33,9 @@ class PipelineOptions:
     database_id: Optional[str] = None
     
     # Processing options
-    whisper_model: str = DEFAULT_WHISPER_MODEL
     frame_interval: float = DEFAULT_FRAME_INTERVAL
     max_frames: int = DEFAULT_MAX_FRAMES
+    processing_mode: ProcessingMode = ProcessingMode.FULL
 
 
 @dataclass

@@ -1,13 +1,11 @@
 pyktok
 playwright
-opencv-python
-easyocr
+opencv-python-headless
 numpy
 pillow
 requests
 python-dotenv
 google-cloud-vision
-openai-whisper
 googlemaps
 pandas
 google-generativeai
@@ -18,3 +16,4 @@ flask
 gunicorn
 google-cloud-storage
 google-cloud-secret-manager
+openai
