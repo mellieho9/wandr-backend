@@ -31,10 +31,8 @@ USER appuser
 COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 ENV PATH=/home/appuser/.local/bin:$PATH
 
-# Install only Chromium browser and aggressively clean up
+# Install only Chromium browser (no firefox/webkit downloaded)
 RUN playwright install chromium && \
-    rm -rf /home/appuser/.cache/ms-playwright/firefox* && \
-    rm -rf /home/appuser/.cache/ms-playwright/webkit* && \
     rm -rf /home/appuser/.cache/pip && \
     rm -rf /home/appuser/.cache/playwright-python && \
     find /home/appuser/.local -name "*.pyc" -delete && \
