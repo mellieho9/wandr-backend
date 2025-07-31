@@ -1,45 +1,46 @@
-# Multi-stage build for smaller final image
+# Stage 1: Build dependencies and install Python packages
 FROM python:3.11-slim AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Install build dependencies for Debian
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
+    libglib2.0-dev \
+    libcairo2-dev \
+    libgirepository1.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python packages
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
 
-# Intermediate stage for system dependencies
-FROM python:3.11-slim AS runtime-builder
+# Stage 2: Install Playwright and browsers (heavy stage)
+FROM python:3.11-slim AS playwright-installer
 
-# Install system dependencies that distroless needs
+# Install minimal runtime dependencies for Playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libgomp1 \
-    ffmpeg \
-    xvfb \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create app structure
-WORKDIR /app
-RUN useradd --create-home --shell /bin/bash appuser
-
-# Create directories with proper ownership
-RUN mkdir -p results logs && chown -R appuser:appuser /app
+    bash \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --shell /bin/bash appuser
 
 USER appuser
 
-# Install Playwright browsers
+# Copy Python packages from builder
 COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 ENV PATH=/home/appuser/.local/bin:$PATH
-RUN playwright install chromium
 
-# Copy application code
-COPY --chown=appuser:appuser . .
+# Install only Chromium browser and aggressively clean up
+RUN playwright install chromium && \
+    rm -rf /home/appuser/.cache/ms-playwright/firefox* && \
+    rm -rf /home/appuser/.cache/ms-playwright/webkit* && \
+    rm -rf /home/appuser/.cache/pip && \
+    rm -rf /home/appuser/.cache/playwright-python && \
+    find /home/appuser/.local -name "*.pyc" -delete && \
+    find /home/appuser/.local -name "__pycache__" -type d -exec rm -rf {} + || true
 
-# Final production stage - using slim instead of distroless for compatibility
+# Stage 3: Final lightweight runtime
 FROM python:3.11-slim
 
 # Set environment variables
@@ -50,25 +51,26 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     PATH=/home/appuser/.local/bin:$PATH
 
-# Install minimal runtime dependencies
+# Install minimal runtime dependencies (NO ffmpeg - not needed!)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libgomp1 \
-    ffmpeg \
     xvfb \
+    bash \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Create user
-RUN useradd --create-home --shell /bin/bash appuser
-
-# Copy everything from runtime-builder
-COPY --from=runtime-builder --chown=appuser:appuser /app /app
-COPY --from=runtime-builder --chown=appuser:appuser /home/appuser/.local /home/appuser/.local
-COPY --from=runtime-builder --chown=appuser:appuser /home/appuser/.cache /home/appuser/.cache
+    && apt-get clean \
+    && useradd --create-home --shell /bin/bash appuser
 
 WORKDIR /app
+RUN mkdir -p results logs && chown -R appuser:appuser /app
+
+# Copy Python packages and Playwright browsers from previous stages
+COPY --from=playwright-installer --chown=appuser:appuser /home/appuser/.local /home/appuser/.local
+
 USER appuser
+
+# Copy application code (this should be last for better caching)
+COPY --chown=appuser:appuser . .
 
 # Expose port
 EXPOSE 8080

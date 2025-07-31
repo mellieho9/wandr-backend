@@ -40,7 +40,7 @@ gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
 # Build and push Docker image
 echo "📦 Building Docker image..."
-docker buildx build -t $IMAGE_NAME --platform linux/amd64 .
+docker build -t $IMAGE_NAME .
 
 echo "📤 Pushing image to Artifact Registry..."
 docker push $IMAGE_NAME

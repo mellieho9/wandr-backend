@@ -2,21 +2,22 @@
 
 import os
 from pathlib import Path
-from .url_parser import generate_results_file_path, generate_metadata_file_path
+from .url_parser import TikTokURLParser
 from .logging_config import setup_logging
 
 logger = setup_logging(logger_name=__name__)
 
-def cleanup_video_files(video_id: str) -> bool:
+def cleanup_video_files(video_id: str, url: str = None) -> bool:
     """Clean up all files for a specific video ID after processing"""
     try:
         cleaned_files = []
         
-        # Clean up results JSON and metadata CSV
-        for file_path in [generate_results_file_path(video_id), generate_metadata_file_path(video_id)]:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                cleaned_files.append(file_path)
+        # Clean up results JSON and metadata CSV if URL is provided
+        if url:
+            for file_path in [TikTokURLParser.get_results_filename(url), TikTokURLParser.get_metadata_filename(url)]:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    cleaned_files.append(file_path)
         
         # Clean up video/image files with video_id pattern
         results_path = Path("results")
