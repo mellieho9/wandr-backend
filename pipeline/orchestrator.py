@@ -5,13 +5,12 @@ Pipeline orchestrator for coordinating processing operations
 import traceback
 from typing import Dict
 from utils.constants import MAX_RECOMMENDATION_PREVIEW_LENGTH
-from utils.config import config
 from models.pipeline_models import (
-    PipelineOptions, ProcessingResult, ProcessingStatus, BatchProcessingResult
+    PipelineOptions, ProcessingResult, ProcessingStatus
 )
 from utils.exceptions import ConfigurationError
-from services.notion_service.notion_client import NotionClient
 from utils.logging_config import LoggerMixin, setup_logging, log_success
+from utils.cleanup import cleanup_video_files
 from .commands import ProcessVideoCommand, ExtractLocationCommand, CreateNotionEntryCommand
 
 logger = setup_logging(logger_name=__name__)
@@ -85,6 +84,12 @@ class PipelineOrchestrator(LoggerMixin):
             
             # Log summary
             self._log_pipeline_summary(results)
+            
+            # Clean up processed files
+            if video_result and video_result.success and video_result.metadata.get('video_id'):
+                video_id = video_result.metadata['video_id']
+                if cleanup_video_files(video_id):
+                    self.logger.info(f"Cleaned up processed files for video {video_id}")
             
             log_success(self.logger, "Pipeline completed!")
             return results
