@@ -103,7 +103,7 @@ Extract information in this EXACT JSON format:
 - Look for temporal indicators like "this weekend", "popup", "limited time"
 - DO NOT return generic names like "unnamed", "unknown", "restaurant", "cafe", "store", "business", etc.
 - Only return specific, identifiable business names with actual place names
-- If only generic descriptions are available, return empty places array
+- If only generic descriptions are available, return the name as "establishment in location" (e.g., "Korean restaurant in Flushing")
 - ALWAYS extract Chinese/non-English place names - they are valid specific business names
 - For market vendors WITH specific names: Use the actual vendor name and include market address
 - For market vendors WITHOUT specific names: Format as directional location (e.g., "Corner Stall at Golden Mall Food Court", "Stand 5 at Union Square Farmer's Market", "Booth A12 at Brooklyn Flea")
