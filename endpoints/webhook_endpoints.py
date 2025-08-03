@@ -50,6 +50,7 @@ def process_webhook():
         
         # Get JSON data
         data = request.get_json()
+        logger.info(f"Received webhook data: {data}")
         
         if not data:
             response = WebhookResponse(
