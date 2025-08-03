@@ -39,6 +39,7 @@ def process_webhook():
     endpoint_handler = WebhookEndpoints()
     
     try:
+        logger.info(f"Raw request data: {request.data.decode('utf-8', errors='replace')}")
         # Validate request content type
         if not request.is_json:
             response = WebhookResponse(
