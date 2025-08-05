@@ -12,8 +12,33 @@ ProcessingType = ProcessingMode
 
 
 @dataclass
+class NotionWebhookEvent:
+    """Full Notion webhook event structure for automation webhooks"""
+    id: str
+    timestamp: str
+    type: str
+    entity: Dict[str, Any]
+    workspace_id: Optional[str] = None
+    authors: Optional[List[Dict[str, Any]]] = field(default_factory=list)
+    data: Optional[Dict[str, Any]] = field(default_factory=dict)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'NotionWebhookEvent':
+        """Create webhook event from dictionary data"""
+        return cls(
+            id=data.get('id', ''),
+            timestamp=data.get('timestamp', ''),
+            type=data.get('type', ''),
+            entity=data.get('entity', {}),
+            workspace_id=data.get('workspace_id'),
+            authors=data.get('authors', []),
+            data=data.get('data', {})
+        )
+
+
+@dataclass
 class NotionWebhookPayload:
-    """Payload structure for Notion webhook requests"""
+    """Payload structure for simple webhook requests (backward compatibility)"""
     url: str
     tags: Optional[List[str]] = field(default_factory=list)
     
@@ -35,10 +60,37 @@ class NotionWebhookPayload:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'NotionWebhookPayload':
         """Create payload from dictionary data"""
+        # Support both 'tags' and 'content' field names for backward compatibility
+        tags = data.get('tags', data.get('content', []))
+        
         return cls(
             url=data.get('url', ''),
-            tags=data.get('tags', [])
+            tags=tags
         )
+    
+    @classmethod
+    def from_notion_event(cls, event: NotionWebhookEvent, page_properties: Dict[str, Any]) -> 'NotionWebhookPayload':
+        """Create simple payload from Notion webhook event and extracted page properties"""
+        url = ''
+        tags = []
+        
+        # Extract URL from common property names
+        for prop_name, prop_value in page_properties.items():
+            if prop_name.lower() in ['url', 'link', 'source url', 'source']:
+                if isinstance(prop_value, str) and prop_value.strip():
+                    url = prop_value.strip()
+                    break
+        
+        # Extract tags from common property names
+        for prop_name, prop_value in page_properties.items():
+            if prop_name.lower() in ['tags', 'content', 'processing mode', 'mode']:
+                if isinstance(prop_value, list):
+                    tags = prop_value
+                elif isinstance(prop_value, str) and prop_value.strip():
+                    tags = [prop_value.strip()]
+                break
+        
+        return cls(url=url, tags=tags)
 
 
 @dataclass

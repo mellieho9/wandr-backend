@@ -2,8 +2,9 @@
 Webhook endpoints for handling Notion webhook requests
 """
 
+from typing import Dict, Any
 from flask import Blueprint, request, jsonify
-from models.webhook_models import NotionWebhookPayload, WebhookResponse
+from models.webhook_models import NotionWebhookPayload, NotionWebhookEvent, WebhookResponse
 from services.webhook_service.webhook_processor import WebhookProcessor
 from utils.logging_config import LoggerMixin, setup_logging
 
@@ -139,9 +140,91 @@ def status():
             'supported_processing_types': ['full', 'metadata-only', 'audio-only'],
             'endpoints': [
                 '/webhook/process - POST - Process webhook request',
+                '/webhook/notion-event - POST - Process Notion webhook event',
                 '/webhook/health - GET - Health check',
                 '/webhook/status - GET - Service status'
             ]
         }
     )
     return jsonify(response.to_dict()), 200
+
+
+def is_notion_webhook_event(data: Dict[str, Any]) -> bool:
+    """Check if the data matches Notion webhook event structure"""
+    required_fields = ['id', 'timestamp', 'type', 'entity']
+    return all(field in data for field in required_fields)
+
+
+@webhook_bp.route('/webhook/notion-event', methods=['POST'])
+def process_notion_webhook_event():
+    """Process a full Notion webhook event from automation"""
+    endpoint_handler = WebhookEndpoints()
+    
+    try:
+        logger.info(f"Raw Notion webhook data: {request.data.decode('utf-8', errors='replace')}")
+        
+        # Validate request content type
+        if not request.is_json:
+            response = WebhookResponse(
+                success=False,
+                message="Content-Type must be application/json",
+                error="Invalid content type"
+            )
+            return jsonify(response.to_dict()), 400
+        
+        # Get JSON data
+        data = request.get_json()
+        logger.info(f"Received Notion webhook event data: {data}")
+        
+        if not data:
+            response = WebhookResponse(
+                success=False,
+                message="No JSON data provided",
+                error="Empty request body"
+            )
+            return jsonify(response.to_dict()), 400
+        
+        # Validate Notion webhook event structure
+        if not is_notion_webhook_event(data):
+            response = WebhookResponse(
+                success=False,
+                message="Invalid Notion webhook event structure",
+                error="Missing required fields: id, timestamp, type, entity"
+            )
+            return jsonify(response.to_dict()), 400
+        
+        # Create webhook event from request data
+        webhook_event = NotionWebhookEvent.from_dict(data)
+        
+        # Log incoming event
+        endpoint_handler.logger.info(f"Received Notion webhook event: ID={webhook_event.id}, Type={webhook_event.type}")
+        
+        # Process the webhook event
+        result = endpoint_handler.processor.process_notion_webhook_event(webhook_event)
+        
+        if result['success']:
+            response = WebhookResponse(
+                success=True,
+                message=result['message'],
+                data={
+                    'processing_type': result.get('processing_type'),
+                    'results': serialize_results(result.get('results', {}))
+                }
+            )
+            return jsonify(response.to_dict()), 200
+        else:
+            response = WebhookResponse(
+                success=False,
+                message=result['message'],
+                error=result.get('error', 'Processing failed')
+            )
+            return jsonify(response.to_dict()), 500
+            
+    except Exception as e:
+        endpoint_handler.logger.error(f"Notion webhook event processing error: {e}")
+        response = WebhookResponse(
+            success=False,
+            message="Internal server error",
+            error=str(e)
+        )
+        return jsonify(response.to_dict()), 500

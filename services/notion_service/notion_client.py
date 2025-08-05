@@ -143,6 +143,69 @@ class NotionClient:
         location_handler = LocationHandler(self)
         return location_handler.create_location_entry(database_id, location_data)
     
+    def retrieve_page(self, page_id: str) -> Dict[str, Any]:
+        """
+        Retrieve a specific page by ID.
+        
+        Args:
+            page_id: The ID of the page to retrieve
+            
+        Returns:
+            The page object from Notion API
+            
+        Raises:
+            APIResponseError: If the API request fails
+        """
+        try:
+            logger.info(f"Retrieving page {page_id}")
+            
+            response = self.client.pages.retrieve(page_id=page_id)
+            
+            log_success(logger, f"Retrieved page {page_id}")
+            return response
+            
+        except APIResponseError as e:
+            logger.error(f"Failed to retrieve page {page_id}: {e}")
+            raise
+    
+    def extract_page_properties(self, page: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract and simplify page properties from a Notion page object.
+        
+        Args:
+            page: Page object from Notion API
+            
+        Returns:
+            Dictionary of simplified property values
+        """
+        properties = {}
+        page_properties = page.get('properties', {})
+        
+        for prop_name, prop_data in page_properties.items():
+            prop_type = prop_data.get('type')
+            
+            if prop_type == 'title':
+                title_list = prop_data.get('title', [])
+                properties[prop_name] = title_list[0].get('plain_text', '') if title_list else ''
+            elif prop_type == 'rich_text':
+                rich_text_list = prop_data.get('rich_text', [])
+                properties[prop_name] = rich_text_list[0].get('plain_text', '') if rich_text_list else ''
+            elif prop_type == 'url':
+                properties[prop_name] = prop_data.get('url', '')
+            elif prop_type == 'multi_select':
+                options = prop_data.get('multi_select', [])
+                properties[prop_name] = [option.get('name', '') for option in options]
+            elif prop_type == 'select':
+                select_data = prop_data.get('select')
+                properties[prop_name] = select_data.get('name', '') if select_data else ''
+            elif prop_type == 'checkbox':
+                properties[prop_name] = prop_data.get('checkbox', False)
+            else:
+                # For other types, store the raw value
+                properties[prop_name] = prop_data
+        
+        return properties
+    
     def update_entry_status(self, page_id: str, status: str, status_property: str = "Status") -> bool:
         """
         Update the status of a Notion database entry.
