@@ -141,6 +141,7 @@ def status():
             'endpoints': [
                 '/webhook/process - POST - Process webhook request',
                 '/webhook/notion-event - POST - Process Notion webhook event',
+                '/webhook/debug - POST/GET - Debug webhook data logging',
                 '/webhook/health - GET - Health check',
                 '/webhook/status - GET - Service status'
             ]
@@ -225,6 +226,50 @@ def process_notion_webhook_event():
         response = WebhookResponse(
             success=False,
             message="Internal server error",
+            error=str(e)
+        )
+        return jsonify(response.to_dict()), 500
+
+
+@webhook_bp.route('/webhook/debug', methods=['POST', 'GET'])
+def debug_webhook():
+    """Debug endpoint that accepts any data format and logs everything"""
+    try:
+        logger.info("=== DEBUG WEBHOOK CALLED ===")
+        logger.info(f"Method: {request.method}")
+        logger.info(f"Headers: {dict(request.headers)}")
+        logger.info(f"Content-Type: {request.content_type}")
+        logger.info(f"Raw data: {request.data.decode('utf-8', errors='replace')}")
+        
+        if request.is_json:
+            data = request.get_json()
+            logger.info(f"JSON data: {data}")
+        else:
+            logger.info("Request is not JSON")
+            
+        if request.form:
+            logger.info(f"Form data: {dict(request.form)}")
+            
+        logger.info("=== END DEBUG ===")
+        
+        response = WebhookResponse(
+            success=True,
+            message="Debug data logged successfully",
+            data={
+                'method': request.method,
+                'content_type': request.content_type,
+                'headers': dict(request.headers),
+                'has_json': request.is_json,
+                'data_received': True
+            }
+        )
+        return jsonify(response.to_dict()), 200
+        
+    except Exception as e:
+        logger.error(f"Debug webhook error: {e}")
+        response = WebhookResponse(
+            success=False,
+            message="Debug endpoint error",
             error=str(e)
         )
         return jsonify(response.to_dict()), 500
