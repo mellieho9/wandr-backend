@@ -23,20 +23,28 @@ done
 
 # Auto-generate IMAGE_NAME from PROJECT_ID and SERVICE_NAME using Artifact Registry
 IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}"
-JOB_NAME="${SERVICE_NAME}-job"
+# scripts/deploy.sh (around lines 26-31)
+base_name="$(echo "$SERVICE_NAME" \
+  | tr '[:upper:]' '[:lower:]' \
+  | sed -E 's/[^a-z0-9-]/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g' \
+  | cut -c1-59)"
+JOB_NAME="${base_name}-job"
 echo "🏷️  Generated image name: $IMAGE_NAME"
 echo "🏷️  Job name: $JOB_NAME"
 
 echo "🚀 Starting job deployment..."
-
 # Create Artifact Registry repository if it doesn't exist
 echo "📋 Setting up Artifact Registry..."
-gcloud artifacts repositories create $SERVICE_NAME \
-  --repository-format=docker \
-  --location=$REGION \
-  --description="Wandr backend job container images" \
-  --quiet || echo "Repository already exists"
-
+if ! gcloud artifacts repositories describe "$SERVICE_NAME" \
+  --location="$REGION" \
+  --project="$PROJECT_ID" >/dev/null 2>&1; then
+  gcloud artifacts repositories create "$SERVICE_NAME" \
+    --repository-format=docker \
+    --location="$REGION" \
+    --project="$PROJECT_ID" \
+    --description="Wandr backend job container images" \
+    --quiet
+fi
 # Configure Docker authentication for Artifact Registry
 gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 

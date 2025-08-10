@@ -29,7 +29,7 @@ class URLProcessor:
         Args:
             database_id: The ID of the database to query
             url_property: Name of the URL property in the database
-            date_property: Name of the date property to filter by (default: "Created")
+            tags_property: Name of the tags property in the database (default: "Tags")
             status_property: Name of the status property to filter by (default: "Status")
             
         Returns:
@@ -71,7 +71,7 @@ class URLProcessor:
             return url_entries
             
         except Exception as e:
-            logger.error(f"Failed to get pending URLs: {e}")
+            logger.exception(f"Failed to get pending URLs: {e}")
             return []
     
     def update_entry_status(self, page_id: str, status: str, status_property: str = "Status") -> bool:

@@ -62,7 +62,7 @@ class ProcessVideoCommand(Command):
             logger.info(f"Processing video: {url} (mode: {self.options.processing_mode.value})")
             
             video_results, metadata = self.processor.process_with_data_return(url, self.options.processing_mode, self.options.output_dir)
-            logger.info(f"video_results: {video_results}")
+
             if not video_results.get('success', False):
                 error_msg = video_results.get('error', 'Unknown video processing error')
                 raise VideoProcessingError(error_msg, context={'url': url})

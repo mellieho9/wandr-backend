@@ -152,17 +152,20 @@ class NotionClient:
         Args:
             database_id: The ID of the database to query
             url_property: Name of the URL property in the database
-            date_property: Name of the date property to filter by (default: "Created")
+            tags_property: Name of the tags property in the database (default: "Tags")
             status_property: Name of the status property to filter by (default: "Status")
             
         Returns:
             List of dictionaries containing URL and page_id for pending entries
         """
 
+        try:
+            url_processor = URLProcessor(self)
+            return url_processor.get_pending_urls(database_id, url_property, tags_property, status_property)
+        except APIResponseError as e:
+            logger.error(f"Failed to get pending URLs from database {database_id}: {e}")
+            raise
         
-        url_processor = URLProcessor(self)
-        return url_processor.get_pending_urls(database_id, url_property, tags_property, status_property)
-    
     def update_entry_status(self, page_id: str, status: str, status_property: str = "Status") -> bool:
         """
         Update the status of a Notion database entry.
@@ -175,7 +178,6 @@ class NotionClient:
         Returns:
             True if update was successful, False otherwise
         """
-        from .url_processor import URLProcessor
         
         url_processor = URLProcessor(self)
         return url_processor.update_entry_status(page_id, status, status_property)

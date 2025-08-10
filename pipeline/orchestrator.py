@@ -45,6 +45,7 @@ class PipelineOrchestrator(LoggerMixin):
         clean_tag = tag.lower().strip()
         if clean_tag in self.TAG_TO_MODE:
             return self.TAG_TO_MODE[clean_tag]
+        return ProcessingMode.FULL
     
     def run_single_url(self, url: str) -> Dict[str, ProcessingResult]:
         """
@@ -177,7 +178,6 @@ class PipelineOrchestrator(LoggerMixin):
                 try:
                     # Determine processing mode from tags
                     processing_mode = self._determine_processing_mode(tag)
-                    self.logger.info(f"Processing URL {i}/{len(url_entries)}: {url} (mode: {processing_mode})")
                     
                     # Create URL-specific options with the determined processing mode
                     url_options = PipelineOptions(

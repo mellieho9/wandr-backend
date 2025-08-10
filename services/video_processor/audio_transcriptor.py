@@ -12,9 +12,8 @@ class AudioTranscriptor:
     Audio transcription using OpenAI's transcription model
     """
     
-    def __init__(self, timeout_seconds=300):  # 5 minutes default
+    def __init__(self):  # 5 minutes default
         self.client = OpenAI()
-        self.timeout_seconds = timeout_seconds
 
     def transcribe_audio(self, audio_path):
         """

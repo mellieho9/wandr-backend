@@ -71,4 +71,4 @@ USER appuser
 COPY --chown=appuser:appuser . .
 
 # Start virtual display and run command
-CMD ["/bin/bash", "-c", "Xvfb :99 -screen 0 1024x768x16 -ac +extension GLX +render -noreset & sleep 2 && python3 app.py --process-pending-urls"]
+CMD ["/bin/bash", "-c", "Xvfb :99 -screen 0 1024x768x16 -ac +extension GLX +render -noreset & while ! xdpyinfo -display :99 >/dev/null 2>&1; do sleep 0.1; done && python3 app.py --process-pending-urls"]

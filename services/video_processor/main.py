@@ -48,7 +48,7 @@ class TikTokProcessor:
         """Process full video or carousel without saving results file"""
         # Download content using enhanced downloader
         ProcessingLogger.log_download_start(url)
-        download_result = self.downloader.download_content(url, output_dir, metadata_file, is_carousel)
+        download_result = self.downloader.download_content(url, output_dir, metadata_file, is_carousel=is_carousel)
 
         if not download_result['success']:
             return {'success': False, 'error': f"Download failed: {download_result['error']}"}
