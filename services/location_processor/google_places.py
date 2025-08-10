@@ -100,6 +100,7 @@ class GooglePlacesService:
         """Search and enhance location information with Google Maps link"""
         
         result = {
+            'name': '',
             'formatted_address': '',
             'hours': '',
             'website': '',
@@ -132,6 +133,9 @@ class GooglePlacesService:
             formatted_address = details.get('formatted_address', '')
             result['formatted_address'] = formatted_address
             result['website'] = details.get('website', '')
+            
+            # Use Google Places name as the official name for Notion  
+            result['name'] = details.get('name', place_name)
             
             # Format opening hours
             if 'opening_hours' in details and 'weekday_text' in details['opening_hours']:

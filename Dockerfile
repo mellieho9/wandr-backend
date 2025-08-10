@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies and install Python packages
-FROM python:3.11-slim AS builder
+FROM --platform=linux/amd64 python:3.11-slim AS builder
 
 # Install build dependencies for Debian
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,7 +15,7 @@ COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
 
 # Stage 2: Install Playwright and browsers (heavy stage)
-FROM python:3.11-slim AS playwright-installer
+FROM --platform=linux/amd64 python:3.11-slim AS playwright-installer
 
 # Install minimal runtime dependencies for Playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -39,7 +39,7 @@ RUN playwright install chromium && \
     find /home/appuser/.local -name "__pycache__" -type d -exec rm -rf {} + || true
 
 # Stage 3: Final lightweight runtime
-FROM python:3.11-slim
+FROM --platform=linux/amd64 python:3.11-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -70,9 +70,5 @@ USER appuser
 # Copy application code (this should be last for better caching)
 COPY --chown=appuser:appuser . .
 
-# Create job script
-RUN printf '#!/bin/bash\nset -e\n\n# Start virtual display in background\nXvfb :99 -screen 0 1024x768x16 -ac +extension GLX +render -noreset &\nsleep 2\n\n# Run the job command\nexec python3 app.py --process-pending-urls\n' > /app/start.sh && \
-    chmod +x /app/start.sh
-
-# Default command
-CMD ["/app/start.sh"]
+# Start virtual display and run command
+CMD ["/bin/bash", "-c", "Xvfb :99 -screen 0 1024x768x16 -ac +extension GLX +render -noreset & sleep 2 && python3 app.py --process-pending-urls"]
