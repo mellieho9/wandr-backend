@@ -38,17 +38,17 @@ class TikTokProcessor:
         if processing_mode == ProcessingMode.METADATA_ONLY:
             results = None
         elif processing_mode == ProcessingMode.AUDIO_ONLY:
-            results = self._process_audio_only_data(url, output_dir, metadata_file)
+            results = self._process_audio_only_data(url, output_dir, metadata_file)   
         else:
-            results = self._process_video_data(url, output_dir, metadata_file)
+            results = self._process_video_data(url, output_dir, metadata_file, processing_mode == ProcessingMode.CAROUSEL)
         
         return results, metadata
 
-    def _process_video_data(self, url, output_dir, metadata_file):
+    def _process_video_data(self, url, output_dir, metadata_file, is_carousel=False):
         """Process full video or carousel without saving results file"""
         # Download content using enhanced downloader
         ProcessingLogger.log_download_start(url)
-        download_result = self.downloader.download_content(url, output_dir, metadata_file)
+        download_result = self.downloader.download_content(url, output_dir, metadata_file, is_carousel)
 
         if not download_result['success']:
             return {'success': False, 'error': f"Download failed: {download_result['error']}"}

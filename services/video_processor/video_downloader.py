@@ -24,11 +24,6 @@ class TikTokDownloader:
             ProcessingLogger.log_initialization(f"TikTok downloader initialized without browser cookies: {e}")
             # Continue without browser cookies - pyktok can still work
 
-    def _get_content_type(self, url):
-        """Detect content type from TikTok URL"""
-        if '/photo/' in url:
-            return 'carousel'
-        return 'video'
 
     def _download_carousel_images(self, url, output_dir):
         """Download carousel images using the fixed method"""
@@ -109,7 +104,7 @@ class TikTokDownloader:
                 'error': str(e)
             }
 
-    def download_content(self, url, output_dir=".", metadata_file=None):
+    def download_content(self, url, output_dir=".", metadata_file=None, is_carousel=False):
         """
         Download TikTok content (video or carousel)
         
@@ -122,13 +117,11 @@ class TikTokDownloader:
             Dictionary with download results
         """
         try:
-            content_type = self._get_content_type(url)
-            ProcessingLogger.log_download_start(url)
             
             # Create output directory if it doesn't exist
             Path(output_dir).mkdir(parents=True, exist_ok=True)
             
-            if content_type == 'carousel':
+            if is_carousel:
                 return self._download_carousel_images(url, output_dir)
             else:
                 return self._download_video_content(url, output_dir, metadata_file)

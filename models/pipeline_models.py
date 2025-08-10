@@ -21,6 +21,7 @@ class ProcessingMode(Enum):
     FULL = "full"  # No tags or None - full processing
     METADATA_ONLY = "metadata-only"  # Skip audio and screenshots
     AUDIO_ONLY = "audio-only"  # Skip screenshots only
+    CAROUSEL = "carousel"  # Skip audio only
 
 
 @dataclass

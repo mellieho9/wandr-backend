@@ -70,11 +70,8 @@ USER appuser
 # Copy application code (this should be last for better caching)
 COPY --chown=appuser:appuser . .
 
-# Expose port
-EXPOSE 8080
-
-# Create startup script
-RUN printf '#!/bin/bash\nset -e\n\n# Start virtual display in background\nXvfb :99 -screen 0 1024x768x16 -ac +extension GLX +render -noreset &\nsleep 2\n\n# Start gunicorn\nexec gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 300 --preload "app:create_app()"\n' > /app/start.sh && \
+# Create job script
+RUN printf '#!/bin/bash\nset -e\n\n# Start virtual display in background\nXvfb :99 -screen 0 1024x768x16 -ac +extension GLX +render -noreset &\nsleep 2\n\n# Run the job command\nexec python3 app.py --process-pending-urls\n' > /app/start.sh && \
     chmod +x /app/start.sh
 
 # Default command

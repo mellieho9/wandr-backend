@@ -62,17 +62,18 @@ class ProcessVideoCommand(Command):
             logger.info(f"Processing video: {url} (mode: {self.options.processing_mode.value})")
             
             video_results, metadata = self.processor.process_with_data_return(url, self.options.processing_mode, self.options.output_dir)
-            
+            logger.info(f"video_results: {video_results}")
             if not video_results.get('success', False):
                 error_msg = video_results.get('error', 'Unknown video processing error')
                 raise VideoProcessingError(error_msg, context={'url': url})
             
+
             # Extract text content
             combined_text = video_results.get('combined_text', '')
             transcription_text = self._extract_transcription_text(video_results)
             ocr_text = self._extract_ocr_text(video_results)
             video_path = video_results.get('video_path')
-            
+
             return VideoProcessingResult(
                 status=ProcessingStatus.SUCCESS,
                 data={'video_results': video_results, 'metadata': metadata},

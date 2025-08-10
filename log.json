@@ -1,0 +1,168 @@
+---
+insertId: 68964c01000dec268575b690
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fstderr
+receiveTimestamp: '2025-08-08T19:12:01.972398116Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+textPayload: '[2025-08-08 19:12:01 +0000] [11] [INFO] Booting worker with pid: 11'
+timestamp: '2025-08-08T19:12:01.912422Z'
+---
+insertId: 68964c0100099eecea82845f
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fvarlog%2Fsystem
+receiveTimestamp: '2025-08-08T19:12:01.635708142Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+severity: INFO
+textPayload: Default STARTUP TCP probe succeeded after 1 attempt for container "wandr-webhook-service-1"
+  on port 8080.
+timestamp: '2025-08-08T19:12:01.630508Z'
+---
+insertId: 68964c0100099bc4446eeb6e
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fstderr
+receiveTimestamp: '2025-08-08T19:12:01.972398116Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+textPayload: '[2025-08-08 19:12:01 +0000] [1] [INFO] Using worker: sync'
+timestamp: '2025-08-08T19:12:01.629700Z'
+---
+insertId: 68964c0100099b7d2121de1d
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fstderr
+receiveTimestamp: '2025-08-08T19:12:01.972398116Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+textPayload: '[2025-08-08 19:12:01 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080
+  (1)'
+timestamp: '2025-08-08T19:12:01.629629Z'
+---
+insertId: 68964c0100098b624f3c05ed
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fstderr
+receiveTimestamp: '2025-08-08T19:12:01.634358866Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+textPayload: '[2025-08-08 19:12:01 +0000] [1] [INFO] Starting gunicorn 23.0.0'
+timestamp: '2025-08-08T19:12:01.625506Z'
+---
+insertId: 68964bed00054bb334f9112c
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fstdout
+receiveTimestamp: '2025-08-08T19:11:41.353350144Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+textPayload: If pyktok does not operate as expected, you may find it helpful to run
+  the 'specify_browser' function. 'specify_browser' takes as its sole argument a string
+  representing a browser installed on your system, e.g. "chrome," "firefox," "edge,"
+  etc.
+timestamp: '2025-08-08T19:11:41.347059Z'
+---
+insertId: 68964be00002271f6023a24c
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fstderr
+receiveTimestamp: '2025-08-08T19:11:28.148642514Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+textPayload: '_XSERVTransmkdir: ERROR: euid != 0,directory /tmp/.X11-unix will not
+  be created.'
+timestamp: '2025-08-08T19:11:28.141087Z'
+---
+insertId: 68964bde0009fc430f51b225
+labels:
+  scaling_reason: AUTOSCALING
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Fvarlog%2Fsystem
+receiveTimestamp: '2025-08-08T19:11:26.661721625Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+severity: INFO
+textPayload: 'Starting new instance. Reason: AUTOSCALING - Instance started due to
+  configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no
+  existing capacity for current traffic.'
+timestamp: '2025-08-08T19:11:26.654403Z'
+---
+httpRequest:
+  latency: 34.139232901s
+  protocol: HTTP/1.1
+  remoteIp: 34.209.130.158
+  requestMethod: POST
+  requestSize: '1615'
+  requestUrl: https://wandr-webhook-service-394082396718.us-central1.run.app/webhook/debug
+  responseSize: '213'
+  serverIp: 34.143.78.2
+  status: 404
+  userAgent: NotionAutomation
+insertId: 68964c020000aa0e1d8e1913
+labels:
+  instanceId: 0069c7a988468ca6a027174f5b8b2da512a96f844dd769ad3c89f7c8e1326692d170a2ec66e609be541eb8580e7d0cce9ab2731ddc1ab8bf3dc6c9306bbf3ae4970448be2f6547cdd885be80a959dd
+logName: projects/wandr-backend-dev/logs/run.googleapis.com%2Frequests
+receiveTimestamp: '2025-08-08T19:12:02.052596594Z'
+resource:
+  labels:
+    configuration_name: wandr-webhook-service
+    location: us-central1
+    project_id: wandr-backend-dev
+    revision_name: wandr-webhook-service-00002-4lt
+    service_name: wandr-webhook-service
+  type: cloud_run_revision
+severity: WARNING
+spanId: 3271febdea24685f
+timestamp: '2025-08-08T19:11:26.599787Z'
+trace: projects/wandr-backend-dev/traces/5894ae30e563bc432c4ce1239a6ff2a6
+traceSampled: true
