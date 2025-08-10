@@ -1,12 +1,13 @@
 """
 Pipeline orchestrator for coordinating processing operations
 """
-
 import traceback
+from utils.config import config
 from typing import Dict
+from services.notion_service.notion_client import NotionClient
 from utils.constants import MAX_RECOMMENDATION_PREVIEW_LENGTH
 from models.pipeline_models import (
-    PipelineOptions, ProcessingResult, ProcessingStatus
+    PipelineOptions, ProcessingResult, ProcessingStatus, BatchProcessingResult, ProcessingMode
 )
 from utils.exceptions import ConfigurationError
 from utils.logging_config import LoggerMixin, setup_logging, log_success
@@ -28,6 +29,23 @@ class PipelineOrchestrator(LoggerMixin):
         """
         self.options = options
         self._validate_configuration()
+    
+    # Tag to processing mode mapping
+    TAG_TO_MODE = {
+        "metadata-only": ProcessingMode.METADATA_ONLY,
+        "audio-only": ProcessingMode.AUDIO_ONLY,
+        "carousel": ProcessingMode.CAROUSEL
+    }
+    
+    def _determine_processing_mode(self, tag):
+        """Determine processing mode from tags using mapping."""
+        if not tag:
+            return ProcessingMode.FULL
+        
+        clean_tag = tag.lower().strip()
+        if clean_tag in self.TAG_TO_MODE:
+            return self.TAG_TO_MODE[clean_tag]
+        return ProcessingMode.FULL
     
     def run_single_url(self, url: str) -> Dict[str, ProcessingResult]:
         """
@@ -107,6 +125,140 @@ class PipelineOrchestrator(LoggerMixin):
                 )
             
             return results
+    
+    def run_batch_processing(self, source_database_id: str, places_database_id: str) -> BatchProcessingResult:
+        """
+        Process all pending URLs from source database and create place entries.
+        
+        Args:
+            source_database_id: Database ID to pull URLs from
+            places_database_id: Database ID to create place entries in
+            
+        Returns:
+            BatchProcessingResult with processing summary
+        """
+        try:
+            self.logger.info("Starting batch processing of pending URLs...")
+            
+            # Initialize Notion client
+            api_key = config.get_notion_api_key()
+            if not api_key:
+                raise ConfigurationError("NOTION_API_KEY environment variable is required")
+            
+            notion_client = NotionClient(api_key)
+            
+            # Get pending URLs
+            url_entries = notion_client.get_pending_urls(source_database_id)
+            
+            if not url_entries:
+                self.logger.info("No pending URLs found for today")
+                return BatchProcessingResult(
+                    total_processed=0,
+                    successful=0,
+                    failed=0,
+                    errors=[]
+                )
+            
+            self.logger.info(f"Processing {len(url_entries)} pending URLs...")
+            
+            results = {
+                "processed": len(url_entries),
+                "successful": 0,
+                "failed": 0,
+                "errors": []
+            }
+            
+            # Process each URL through the pipeline
+            for i, entry in enumerate(url_entries, 1):
+                url = entry['url']
+                page_id = entry['page_id']
+                tag = entry.get('tag')
+                logger.info(f"Processing URL {i}/{len(url_entries)}: {url} (tag: {tag})")
+                
+                try:
+                    # Determine processing mode from tags
+                    processing_mode = self._determine_processing_mode(tag)
+                    
+                    # Create URL-specific options with the determined processing mode
+                    url_options = PipelineOptions(
+                        frame_interval=self.options.frame_interval,
+                        max_frames=self.options.max_frames,
+                        output_dir=self.options.output_dir,
+                        categories=self.options.categories,
+                        create_notion_entry=True,
+                        database_id=places_database_id,
+                        processing_mode=processing_mode
+                    )
+                    
+                    # Create URL-specific orchestrator
+                    url_orchestrator = PipelineOrchestrator(url_options)
+                    pipeline_results = url_orchestrator.run_single_url(url)
+                    
+                    # Check if processing was successful
+                    video_result = pipeline_results.get('video')
+                    location_result = pipeline_results.get('location')
+                    notion_result = pipeline_results.get('notion')
+                    
+                    video_success = video_result and video_result.status == ProcessingStatus.SUCCESS
+                    location_success = location_result and location_result.status == ProcessingStatus.SUCCESS
+                    notion_success = notion_result and notion_result.status == ProcessingStatus.SUCCESS
+                    
+                    if video_success and location_success and notion_success:
+                        # Update status to 'Completed'
+                        notion_client.update_entry_status(page_id, "Completed")
+                        results["successful"] += 1
+                        log_success(self.logger, f"Successfully processed: {url}")
+                    else:
+                        # Update status to 'Failed'
+                        notion_client.update_entry_status(page_id, "Failed")
+                        results["failed"] += 1
+                        error_msg = f"Processing failed for: {url}"
+                        results["errors"].append(error_msg)
+                        self.logger.error(f"{error_msg}")
+                        
+                except Exception as e:
+                    # Update status to 'Failed' on exception
+                    notion_client.update_entry_status(page_id, "Failed")
+                    results["failed"] += 1
+                    error_msg = f"Error processing {url}: {str(e)}"
+                    results["errors"].append(error_msg)
+                    self.logger.error(f"{error_msg}")
+            
+            # Convert to our result format
+            batch_result = BatchProcessingResult(
+                total_processed=results['processed'],
+                successful=results['successful'],
+                failed=results['failed'],
+                errors=results['errors']
+            )
+            
+            # Log summary
+            self.logger.info("Batch Processing Summary:")
+            self.logger.info(f"  Total URLs processed: {batch_result.total_processed}")
+            log_success(self.logger, f"Successful: {batch_result.successful}")
+            if batch_result.failed > 0:
+                self.logger.error(f"Failed: {batch_result.failed}")
+            else:
+                self.logger.info(f"Failed: {batch_result.failed}")
+            log_success(self.logger, f"Success rate: {batch_result.success_rate:.1f}%")
+            
+            if batch_result.errors:
+                self.logger.error("Errors encountered:")
+                for error in batch_result.errors:
+                    self.logger.error(f"  - {error}")
+            
+            return batch_result
+            
+        except Exception as e:
+            error_msg = f"Batch processing failed: {str(e)}"
+            self.logger.error(error_msg)
+            
+            return BatchProcessingResult(
+                total_processed=0,
+                successful=0,
+                failed=0,
+                errors=[error_msg]
+            )
     
     def _validate_configuration(self):
         """Validate pipeline configuration"""

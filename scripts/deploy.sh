@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deployment script for wandr-webhook-service Cloud Run Service
+# Deployment script for wandr-backend Cloud Run Job
 
 set -e
 
@@ -23,18 +23,28 @@ done
 
 # Auto-generate IMAGE_NAME from PROJECT_ID and SERVICE_NAME using Artifact Registry
 IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}"
+# scripts/deploy.sh (around lines 26-31)
+base_name="$(echo "$SERVICE_NAME" \
+  | tr '[:upper:]' '[:lower:]' \
+  | sed -E 's/[^a-z0-9-]/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g' \
+  | cut -c1-59)"
+JOB_NAME="${base_name}-job"
 echo "🏷️  Generated image name: $IMAGE_NAME"
+echo "🏷️  Job name: $JOB_NAME"
 
-echo "🚀 Starting webhook service deployment..."
-
+echo "🚀 Starting job deployment..."
 # Create Artifact Registry repository if it doesn't exist
 echo "📋 Setting up Artifact Registry..."
-gcloud artifacts repositories create $SERVICE_NAME \
-  --repository-format=docker \
-  --location=$REGION \
-  --description="Wandr webhook service container images" \
-  --quiet || echo "Repository already exists"
-
+if ! gcloud artifacts repositories describe "$SERVICE_NAME" \
+  --location="$REGION" \
+  --project="$PROJECT_ID" >/dev/null 2>&1; then
+  gcloud artifacts repositories create "$SERVICE_NAME" \
+    --repository-format=docker \
+    --location="$REGION" \
+    --project="$PROJECT_ID" \
+    --description="Wandr backend job container images" \
+    --quiet
+fi
 # Configure Docker authentication for Artifact Registry
 gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
@@ -45,28 +55,27 @@ docker build -t $IMAGE_NAME .
 echo "📤 Pushing image to Artifact Registry..."
 docker push $IMAGE_NAME
 
-# Deploy Cloud Run Service
-echo "🏗️  Deploying Cloud Run Service..."
-gcloud run deploy $SERVICE_NAME \
+# Deploy Cloud Run Job
+echo "🏗️  Deploying Cloud Run Job..."
+gcloud run jobs create $JOB_NAME \
   --image=$IMAGE_NAME \
   --region=$REGION \
   --memory=2Gi \
   --cpu=2 \
-  --timeout=3600 \
-  --max-instances=10 \
-  --min-instances=0 \
-  --allow-unauthenticated \
-  --set-env-vars="PYTHONPATH=/app,HOST=0.0.0.0" \
-  --set-secrets="VISION_API_KEY=VISION_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest,NOTION_API_KEY=NOTION_API_KEY:latest,NOTION_PLACES_DB_ID=NOTION_PLACES_DB_ID:latest"
-
-# Get service URL
-SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=$REGION --format="value(status.url)")
-
-echo "✅ Deployment complete!"
-echo "🌐 Service URL: $SERVICE_URL"
-echo "📋 Webhook endpoints:"
-echo "   • POST $SERVICE_URL/webhook/process - Process webhook requests"
-echo "   • GET  $SERVICE_URL/webhook/health - Health check"
-echo "   • GET  $SERVICE_URL/webhook/status - Service status"
-echo ""
-echo "💡 Configure your Notion webhook to POST to: $SERVICE_URL/webhook/process"
+  --max-retries=3 \
+  --task-timeout=3600 \
+  --set-env-vars="PYTHONPATH=/app" \
+  --set-secrets="VISION_API_KEY=VISION_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest,NOTION_API_KEY=NOTION_API_KEY:latest,NOTION_PLACES_DB_ID=NOTION_PLACES_DB_ID:latest,NOTION_SOURCE_DB_ID=NOTION_SOURCE_DB_ID:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest" \
+  --quiet || \
+gcloud run jobs update $JOB_NAME \
+  --image=$IMAGE_NAME \
+  --region=$REGION \
+  --memory=2Gi \
+  --cpu=2 \
+  --max-retries=3 \
+  --task-timeout=3600 \
+  --set-env-vars="PYTHONPATH=/app" \
+  --set-secrets="VISION_API_KEY=VISION_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest,NOTION_API_KEY=NOTION_API_KEY:latest,NOTION_PLACES_DB_ID=NOTION_PLACES_DB_ID:latest,NOTION_SOURCE_DB_ID=NOTION_SOURCE_DB_ID:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest" \
+  --quiet
+  
+echo "💡 Manual execution: gcloud run jobs execute $JOB_NAME --region=$REGION"
